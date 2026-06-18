@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, Suspense } from 'react';
 import { LogOut, Home } from 'lucide-react';
 import {
@@ -111,6 +112,13 @@ function Header() {
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAppDashboard = pathname.startsWith('/dashboard');
+
+  if (isAppDashboard) {
+    return <>{children}</>;
+  }
+
   return (
     <section className="flex flex-col min-h-screen bg-white">
       <Header />

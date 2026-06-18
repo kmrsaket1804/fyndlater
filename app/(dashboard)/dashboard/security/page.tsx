@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Lock, Trash2, Loader2 } from 'lucide-react';
 import { useActionState } from 'react';
 import { updatePassword, deleteAccount } from '@/app/(login)/actions';
+import { SettingsPageShell } from '@/components/dashboard/settings-page-shell';
 
 type PasswordState = {
   currentPassword?: string;
@@ -34,11 +35,8 @@ export default function SecurityPage() {
   >(deleteAccount, {});
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
-      <h1 className="text-lg lg:text-2xl font-medium bold text-gray-900 mb-6">
-        Security Settings
-      </h1>
-      <Card className="mb-8">
+    <SettingsPageShell>
+      <Card className="mb-8 border-gray-100 shadow-sm">
         <CardHeader>
           <CardTitle>Password</CardTitle>
         </CardHeader>
@@ -96,7 +94,7 @@ export default function SecurityPage() {
             )}
             <Button
               type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white"
               disabled={isPasswordPending}
             >
               {isPasswordPending ? (
@@ -115,7 +113,7 @@ export default function SecurityPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-gray-100 shadow-sm">
         <CardHeader>
           <CardTitle>Delete Account</CardTitle>
         </CardHeader>
@@ -162,6 +160,6 @@ export default function SecurityPage() {
           </form>
         </CardContent>
       </Card>
-    </section>
+    </SettingsPageShell>
   );
 }

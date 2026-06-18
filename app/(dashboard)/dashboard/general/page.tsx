@@ -10,6 +10,7 @@ import { updateAccount } from '@/app/(login)/actions';
 import { User } from '@/lib/db/schema';
 import useSWR from 'swr';
 import { Suspense } from 'react';
+import { SettingsPageShell } from '@/components/dashboard/settings-page-shell';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -79,12 +80,8 @@ export default function GeneralPage() {
   );
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
-      <h1 className="text-lg lg:text-2xl font-medium text-gray-900 mb-6">
-        General Settings
-      </h1>
-
-      <Card>
+    <SettingsPageShell>
+      <Card className="border-gray-100 shadow-sm">
         <CardHeader>
           <CardTitle>Account Information</CardTitle>
         </CardHeader>
@@ -101,7 +98,7 @@ export default function GeneralPage() {
             )}
             <Button
               type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white"
               disabled={isPending}
             >
               {isPending ? (
@@ -116,6 +113,6 @@ export default function GeneralPage() {
           </form>
         </CardContent>
       </Card>
-    </section>
+    </SettingsPageShell>
   );
 }
