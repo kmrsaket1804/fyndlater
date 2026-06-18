@@ -20,7 +20,8 @@ export default function PricingPage() {
           Start with Faye today.
         </h1>
         <p className="mt-4 text-lg text-gray-600">
-          Try it free, upgrade when you&apos;re ready to save more.
+          Try it free, upgrade when you&apos;re ready to save more. All prices
+          in INR (₹).
         </p>
       </div>
       <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">

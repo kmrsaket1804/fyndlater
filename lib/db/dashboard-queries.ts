@@ -24,7 +24,6 @@ import {
   getSavesLimit,
 } from '@/lib/dashboard/format';
 import type {
-  ChatMessage,
   CollectionItem,
   DashboardHomeData,
   HighlightItem,
@@ -32,6 +31,7 @@ import type {
   StatItem,
   UsageSummary,
 } from '@/lib/dashboard/types';
+import { getLatestChatPreview } from './ask-queries';
 
 async function requireTeamId() {
   const team = await getTeamForUser();
@@ -386,48 +386,6 @@ export async function getUsageSummary(
     savesLimit: getSavesLimit(planName),
     planName: planName || 'Free Trial',
   };
-}
-
-export async function getLatestChatPreview(
-  teamId: number
-): Promise<ChatMessage[]> {
-  const [latest] = await db
-    .select()
-    .from(retrievals)
-    .where(eq(retrievals.teamId, teamId))
-    .orderBy(desc(retrievals.createdAt))
-    .limit(1);
-
-  if (!latest) {
-    return [
-      {
-        id: 'welcome',
-        role: 'assistant',
-        text: 'Ask me to find anything you have saved — try "packaging reel" or "recipes from last week".',
-      },
-    ];
-  }
-
-  const messages: ChatMessage[] = [
-    { id: `q-${latest.id}`, role: 'user', text: latest.query },
-    {
-      id: `a-${latest.id}`,
-      role: 'assistant',
-      text:
-        latest.responseText ??
-        'Found a match in your saves.',
-    },
-  ];
-
-  if (latest.saveId) {
-    const recent = await getRecentSaves(teamId, 20);
-    const save = recent.find((s) => s.id === latest.saveId);
-    if (save) {
-      messages[1].save = save;
-    }
-  }
-
-  return messages;
 }
 
 export async function getSavedSearchesForTeam(teamId: number) {

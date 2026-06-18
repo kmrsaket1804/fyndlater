@@ -69,10 +69,16 @@ export default function TermsPage() {
 
       <LegalSection title="6. Payment Terms">
         <p>
-          Paid subscription fees are billed in advance on a monthly or annual
-          basis through Stripe. All payments are processed securely. Free trial
-          terms, if offered, will be described at checkout. Refunds are subject
-          to our refund policy and applicable law.
+          Paid subscription fees for FyndLater Pro are billed in advance on a
+          monthly basis in <strong>Indian Rupees (INR)</strong>. Payments are
+          processed securely through{' '}
+          <strong>Cashfree Payments India Pvt. Ltd.</strong> Free trial terms,
+          if offered, are described at checkout. Refunds and cancellations are
+          governed by our{' '}
+          <Link href="/refunds" className="text-violet-600 hover:text-violet-700">
+            Refunds &amp; Cancellations Policy
+          </Link>
+          .
         </p>
       </LegalSection>
 
@@ -129,9 +135,17 @@ export default function TermsPage() {
           We reserve the right to modify or replace these Terms at any time. If a
           revision is material, we will provide at least 30 days notice before
           new terms take effect. Continued use of FyndLater after changes
-          constitutes acceptance of the updated Terms. See also our{' '}
+          constitutes acceptance of the updated Terms.           See also our{' '}
           <Link href="/privacy" className="text-violet-600 hover:text-violet-700">
             Privacy Policy
+          </Link>
+          ,{' '}
+          <Link href="/refunds" className="text-violet-600 hover:text-violet-700">
+            Refunds &amp; Cancellations Policy
+          </Link>
+          , and{' '}
+          <Link href="/services" className="text-violet-600 hover:text-violet-700">
+            Products &amp; Services
           </Link>
           .
         </p>

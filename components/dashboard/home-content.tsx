@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Bell, Loader2, Plus, Sparkles } from 'lucide-react';
 import useSWR from 'swr';
 import { GradientButton } from '@/components/landing/gradient-button';
@@ -17,6 +18,7 @@ type DashboardHomeContentProps = {
 };
 
 export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
+  const router = useRouter();
   const { time, firstName } = getGreeting(user?.name);
   const { data, isLoading, error } = useSWR<DashboardHomeData>(
     '/api/dashboard/home',
@@ -85,6 +87,16 @@ export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
             type="text"
             placeholder="Find that reel I saved about premium packaging"
             className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const value = (e.target as HTMLInputElement).value.trim();
+                if (value) {
+                  router.push(
+                    `/dashboard/ask?q=${encodeURIComponent(value)}`
+                  );
+                }
+              }
+            }}
           />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -92,6 +104,11 @@ export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
             <button
               key={suggestion}
               type="button"
+              onClick={() =>
+                router.push(
+                  `/dashboard/ask?q=${encodeURIComponent(suggestion)}`
+                )
+              }
               className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 hover:border-violet-200 hover:text-violet-700 transition-colors"
             >
               {suggestion}

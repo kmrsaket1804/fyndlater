@@ -42,6 +42,12 @@ export type ChatMessage = {
   role: 'user' | 'assistant';
   text: string;
   save?: SaveItem;
+  createdAt?: string;
+};
+
+export type AskPageData = {
+  messages: ChatMessage[];
+  suggestions: string[];
 };
 
 export type UsageSummary = {

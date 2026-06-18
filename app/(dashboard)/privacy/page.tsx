@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { LegalLayout, LegalSection, LegalList } from '@/components/landing/legal-layout';
 import { company } from '@/lib/company';
 
@@ -24,7 +25,7 @@ export default function PrivacyPage() {
             'Account information: name, email address, and account credentials',
             'Saved content: links, posts, reels, screenshots, notes, and messages you send to Faye',
             'Usage data: how you interact with FyndLater and Faye, including search queries and retrieval requests',
-            'Payment information: billing details processed securely through Stripe',
+            'Payment information: billing details processed securely through Cashfree Payments',
             'Technical data: IP address, browser type, device information, and usage patterns',
             'Instagram data: messages and media you share with Faye, as permitted by your authorization',
           ]}
@@ -116,9 +117,9 @@ export default function PrivacyPage() {
       <LegalSection title="9. Third-Party Services">
         <p>
           FyndLater integrates with third-party services including Instagram,
-          Stripe, and cloud infrastructure providers. This Privacy Policy does
-          not apply to those third-party services, and we encourage you to review
-          their privacy policies.
+          Cashfree Payments, and cloud infrastructure providers. This Privacy
+          Policy does not apply to those third-party services, and we encourage
+          you to review their privacy policies.
         </p>
       </LegalSection>
 
@@ -159,6 +160,28 @@ export default function PrivacyPage() {
             `Data Protection Officer: ${company.legalName}`,
           ]}
         />
+      </LegalSection>
+
+      <LegalSection title="14. Related Policies">
+        <p>
+          See also our{' '}
+          <Link href="/terms" className="text-violet-600 hover:text-violet-700">
+            Terms &amp; Conditions
+          </Link>
+          ,{' '}
+          <Link href="/refunds" className="text-violet-600 hover:text-violet-700">
+            Refunds &amp; Cancellations
+          </Link>
+          ,{' '}
+          <Link href="/services" className="text-violet-600 hover:text-violet-700">
+            Products &amp; Services
+          </Link>
+          , and{' '}
+          <Link href="/contact" className="text-violet-600 hover:text-violet-700">
+            Contact Us
+          </Link>
+          .
+        </p>
       </LegalSection>
     </LegalLayout>
   );

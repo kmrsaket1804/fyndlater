@@ -23,8 +23,10 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 const navLinks = [
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/#use-cases', label: 'Use cases' },
-  { href: '/#pricing', label: 'Pricing' },
+  { href: '/services', label: 'Products' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/#faq', label: 'FAQ' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 function UserMenu() {

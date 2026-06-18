@@ -1,11 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { Loader2, Send, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import useSWR from 'swr';
 import type { DashboardHomeData } from '@/lib/dashboard/types';
-import { cn } from '@/lib/utils';
+import { ChatMessageBubble } from '@/components/dashboard/ask-faye/chat-message';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -31,83 +30,33 @@ export function DashboardRightPanel() {
 
   return (
     <aside className="hidden xl:flex w-[340px] shrink-0 flex-col gap-4 border-l border-gray-100 bg-[#faf9fc] p-5 overflow-y-auto">
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col max-h-[480px]">
         <div className="border-b border-gray-50 px-4 py-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-violet-500" />
             <h3 className="text-sm font-semibold text-gray-900">Ask Faye</h3>
           </div>
         </div>
-        <div className="space-y-3 p-4 max-h-[320px] overflow-y-auto">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {chatMessages.map((message) => (
-            <div
+            <ChatMessageBubble
               key={message.id}
-              className={cn(
-                'text-sm',
-                message.role === 'user' ? 'flex justify-end' : ''
-              )}
-            >
-              {message.role === 'user' ? (
-                <div className="rounded-2xl rounded-br-md bg-violet-600 px-3 py-2 text-white max-w-[85%]">
-                  {message.text}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-gray-600 text-xs">{message.text}</p>
-                  {message.save && (
-                    <div className="rounded-xl border border-gray-100 overflow-hidden">
-                      {message.save.image && (
-                        <div className="relative h-24 w-full">
-                          <Image
-                            src={message.save.image}
-                            alt={message.save.title}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      )}
-                      <div className="p-3">
-                        <p className="text-xs font-medium text-gray-900 line-clamp-1">
-                          {message.save.title}
-                        </p>
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            type="button"
-                            className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600"
-                          >
-                            Show similar
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600"
-                          >
-                            Open collection
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+              role={message.role}
+              text={message.text}
+              createdAt={message.createdAt}
+              save={message.save}
+              compact
+            />
           ))}
         </div>
         <div className="border-t border-gray-50 p-3">
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-            <input
-              type="text"
-              placeholder="Ask or find anything..."
-              className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none"
-            />
-            <button
-              type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600 text-white"
-              aria-label="Send"
-            >
-              <Send className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <Link
+            href="/dashboard/ask"
+            className="flex items-center justify-center gap-2 rounded-xl bg-violet-50 px-3 py-2.5 text-sm font-medium text-violet-700 hover:bg-violet-100 transition-colors"
+          >
+            <Sparkles className="h-4 w-4" />
+            Open full chat
+          </Link>
         </div>
       </div>
 
