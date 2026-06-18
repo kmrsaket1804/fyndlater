@@ -10,7 +10,13 @@ export async function getUser() {
     return null;
   }
 
-  const sessionData = await verifyToken(sessionCookie.value);
+  let sessionData;
+  try {
+    sessionData = await verifyToken(sessionCookie.value);
+  } catch {
+    return null;
+  }
+
   if (
     !sessionData ||
     !sessionData.user ||
@@ -23,17 +29,22 @@ export async function getUser() {
     return null;
   }
 
-  const user = await db
-    .select()
-    .from(users)
-    .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
-    .limit(1);
+  try {
+    const user = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
+      .limit(1);
 
-  if (user.length === 0) {
+    if (user.length === 0) {
+      return null;
+    }
+
+    return user[0];
+  } catch (error) {
+    console.error('Failed to fetch user:', error);
     return null;
   }
-
-  return user[0];
 }
 
 export async function getTeamByStripeCustomerId(customerId: string) {
@@ -105,26 +116,31 @@ export async function getTeamForUser() {
     return null;
   }
 
-  const result = await db.query.teamMembers.findFirst({
-    where: eq(teamMembers.userId, user.id),
-    with: {
-      team: {
-        with: {
-          teamMembers: {
-            with: {
-              user: {
-                columns: {
-                  id: true,
-                  name: true,
-                  email: true
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  });
+  try {
+    const result = await db.query.teamMembers.findFirst({
+      where: eq(teamMembers.userId, user.id),
+      with: {
+        team: {
+          with: {
+            teamMembers: {
+              with: {
+                user: {
+                  columns: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
 
-  return result?.team || null;
+    return result?.team || null;
+  } catch (error) {
+    console.error('Failed to fetch team:', error);
+    return null;
+  }
 }

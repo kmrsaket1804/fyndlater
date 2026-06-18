@@ -20,9 +20,9 @@ export function FinalCTA() {
                 </span>
               </p>
               <div className="mt-8">
-                <GradientButton href="/sign-up" size="lg">
-                  Get started
-                </GradientButton>
+          <GradientButton href="/login?mode=signup" size="lg">
+            Get started
+          </GradientButton>
               </div>
             </div>
           </div>

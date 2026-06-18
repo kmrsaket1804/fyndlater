@@ -61,7 +61,7 @@ export function PricingSection() {
         </div>
 
         <div className="mt-10 text-center">
-          <GradientButton href="/sign-up" size="lg">
+          <GradientButton href="/login?mode=signup" size="lg">
             Start saving with Faye
           </GradientButton>
         </div>

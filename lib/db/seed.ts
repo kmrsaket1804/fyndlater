@@ -1,66 +1,66 @@
-import { stripe } from '../payments/stripe';
+import { eq } from 'drizzle-orm';
 import { db } from './drizzle';
 import { users, teams, teamMembers } from './schema';
 import { hashPassword } from '@/lib/auth/session';
 
-async function createStripeProducts() {
-  console.log('Creating Stripe products and prices...');
-
-  const baseProduct = await stripe.products.create({
-    name: 'Base',
-    description: 'Base subscription plan',
-  });
-
-  await stripe.prices.create({
-    product: baseProduct.id,
-    unit_amount: 800, // $8 in cents
-    currency: 'usd',
-    recurring: {
-      interval: 'month',
-      trial_period_days: 7,
-    },
-  });
-
-  const plusProduct = await stripe.products.create({
-    name: 'Plus',
-    description: 'Plus subscription plan',
-  });
-
-  await stripe.prices.create({
-    product: plusProduct.id,
-    unit_amount: 1200, // $12 in cents
-    currency: 'usd',
-    recurring: {
-      interval: 'month',
-      trial_period_days: 7,
-    },
-  });
-
-  console.log('Stripe products and prices created successfully.');
-}
-
 async function seed() {
-  const email = 'test@test.com';
-  const password = 'admin123';
+  const email = process.env.SEED_ADMIN_EMAIL || 'hello@fyndlater.com';
+  const password = process.env.SEED_ADMIN_PASSWORD || 'Fynd#231';
+  const name = 'FyndLater Admin';
+
   const passwordHash = await hashPassword(password);
 
-  const [user] = await db
-    .insert(users)
-    .values([
-      {
-        email: email,
-        passwordHash: passwordHash,
-        role: "owner",
-      },
-    ])
-    .returning();
+  const existing = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
 
-  console.log('Initial user created.');
+  let user = existing[0];
+
+  if (user) {
+    [user] = await db
+      .update(users)
+      .set({
+        name,
+        passwordHash,
+        role: 'owner',
+        deletedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+    console.log(`Updated existing admin user: ${email}`);
+  } else {
+    [user] = await db
+      .insert(users)
+      .values({
+        email,
+        name,
+        passwordHash,
+        role: 'owner',
+      })
+      .returning();
+    console.log(`Created admin user: ${email}`);
+  }
+
+  const membership = await db
+    .select()
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, user.id))
+    .limit(1);
+
+  if (membership.length > 0) {
+    console.log('Admin team membership already exists.');
+    return;
+  }
 
   const [team] = await db
     .insert(teams)
     .values({
-      name: 'Test Team',
+      name: 'FyndLater',
+      planName: 'Pro',
+      subscriptionStatus: 'active',
     })
     .returning();
 
@@ -70,7 +70,7 @@ async function seed() {
     role: 'owner',
   });
 
-  await createStripeProducts();
+  console.log(`Created team "${team.name}" for admin user.`);
 }
 
 seed()

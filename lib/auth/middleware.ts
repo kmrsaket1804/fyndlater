@@ -14,12 +14,21 @@ type ValidatedActionFunction<S extends z.ZodType<any, any>, T> = (
   formData: FormData
 ) => Promise<T>;
 
+function formDataToObject(formData: FormData) {
+  return Object.fromEntries(
+    Array.from(formData.entries()).map(([key, value]) => [
+      key,
+      typeof value === 'string' && value === '' ? undefined : value,
+    ])
+  );
+}
+
 export function validatedAction<S extends z.ZodType<any, any>, T>(
   schema: S,
   action: ValidatedActionFunction<S, T>
 ) {
   return async (prevState: ActionState, formData: FormData) => {
-    const result = schema.safeParse(Object.fromEntries(formData));
+    const result = schema.safeParse(formDataToObject(formData));
     if (!result.success) {
       return { error: result.error.errors[0].message };
     }
@@ -44,7 +53,7 @@ export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
       throw new Error('User is not authenticated');
     }
 
-    const result = schema.safeParse(Object.fromEntries(formData));
+    const result = schema.safeParse(formDataToObject(formData));
     if (!result.success) {
       return { error: result.error.errors[0].message };
     }
@@ -62,7 +71,7 @@ export function withTeam<T>(action: ActionWithTeamFunction<T>) {
   return async (formData: FormData): Promise<T> => {
     const user = await getUser();
     if (!user) {
-      redirect('/sign-in');
+      redirect('/login');
     }
 
     const team = await getTeamForUser();

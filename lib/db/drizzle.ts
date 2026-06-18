@@ -16,12 +16,19 @@ function getPostgresUrl() {
   if (!url) {
     throw new Error('POSTGRES_URL environment variable is not set');
   }
-  return url;
+  // Neon pooler works best without channel_binding for postgres.js
+  return url
+    .replace('?channel_binding=require&', '?')
+    .replace('&channel_binding=require', '')
+    .replace('?channel_binding=require', '');
 }
 
 function getClient() {
   if (!client) {
-    client = postgres(getPostgresUrl());
+    client = postgres(getPostgresUrl(), {
+      prepare: false,
+      max: 10,
+    });
   }
   return client;
 }

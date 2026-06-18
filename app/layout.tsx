@@ -16,6 +16,24 @@ export const viewport: Viewport = {
 
 const inter = Inter({ subsets: ['latin'] });
 
+async function safeGetUser() {
+  try {
+    return await getUser();
+  } catch (error) {
+    console.error('Failed to load user for layout:', error);
+    return null;
+  }
+}
+
+async function safeGetTeam() {
+  try {
+    return await getTeamForUser();
+  } catch (error) {
+    console.error('Failed to load team for layout:', error);
+    return null;
+  }
+}
+
 export default function RootLayout({
   children
 }: {
@@ -30,10 +48,8 @@ export default function RootLayout({
         <SWRConfig
           value={{
             fallback: {
-              // We do NOT await here
-              // Only components that read this data will suspend
-              '/api/user': getUser(),
-              '/api/team': getTeamForUser()
+              '/api/user': safeGetUser(),
+              '/api/team': safeGetTeam(),
             }
           }}
         >

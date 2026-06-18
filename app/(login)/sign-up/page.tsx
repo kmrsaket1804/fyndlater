@@ -1,10 +1,16 @@
-import { Suspense } from 'react';
-import { Login } from '../login';
+import { redirect } from 'next/navigation';
 
-export default function SignUpPage() {
-  return (
-    <Suspense>
-      <Login mode="signup" />
-    </Suspense>
-  );
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const query = new URLSearchParams({ mode: 'signup' });
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (typeof value === 'string') query.set(key, value);
+  });
+
+  redirect(`/login?${query.toString()}`);
 }

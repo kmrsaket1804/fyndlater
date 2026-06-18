@@ -39,7 +39,15 @@ function UserMenu() {
 
   if (!user) {
     return (
-      <GradientButton href="/sign-up">Start saving</GradientButton>
+      <div className="flex items-center gap-3">
+        <Link
+          href="/login"
+          className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          Login
+        </Link>
+        <GradientButton href="/login?mode=signup">Start saving</GradientButton>
+      </div>
     );
   }
 

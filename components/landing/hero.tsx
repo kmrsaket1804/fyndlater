@@ -21,7 +21,7 @@ export function Hero() {
               asking.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <GradientButton href="/sign-up" size="lg">
+              <GradientButton href="/login?mode=signup" size="lg">
                 Start saving with Faye
               </GradientButton>
               <a

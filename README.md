@@ -33,15 +33,22 @@ Open [http://localhost:3000](http://localhost:3000).
 - Email: `test@test.com`
 - Password: `admin123`
 
-## Environment Variables
+## Auth & Payments
 
-Copy `.env.example` to `.env` and fill in:
+- **Login portal:** `/login` (sign in / sign up tabs)
+- **Payments:** Cashfree (INR) for Pro plan upgrades
+- Legacy Stripe routes remain but pricing uses Cashfree
 
-- `POSTGRES_URL`
-- `AUTH_SECRET`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `BASE_URL`
+### Cashfree env vars
+
+```
+CASHFREE_APP_ID=your_app_id
+CASHFREE_SECRET_KEY=your_secret_key
+CASHFREE_ENVIRONMENT=sandbox
+NEXT_PUBLIC_CASHFREE_ENVIRONMENT=sandbox
+```
+
+Add the webhook URL in Cashfree dashboard: `{BASE_URL}/api/cashfree/webhook`
 
 ## Deploy
 
