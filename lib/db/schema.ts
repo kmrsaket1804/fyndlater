@@ -5,6 +5,9 @@ import {
   text,
   timestamp,
   integer,
+  boolean,
+  primaryKey,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -68,15 +71,114 @@ export const invitations = pgTable('invitations', {
   status: varchar('status', { length: 20 }).notNull().default('pending'),
 });
 
+export const collections = pgTable(
+  'collections',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => teams.id),
+    userId: integer('user_id').references(() => users.id),
+    name: varchar('name', { length: 100 }).notNull(),
+    slug: varchar('slug', { length: 100 }).notNull(),
+    icon: varchar('icon', { length: 10 }),
+    gradient: varchar('gradient', { length: 100 }),
+    isSmart: boolean('is_smart').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    teamSlugIdx: uniqueIndex('collections_team_slug_idx').on(
+      table.teamId,
+      table.slug
+    ),
+  })
+);
+
+export const saves = pgTable('saves', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id')
+    .notNull()
+    .references(() => teams.id),
+  userId: integer('user_id').references(() => users.id),
+  type: varchar('type', { length: 20 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  source: varchar('source', { length: 50 }).notNull(),
+  sourceUrl: text('source_url'),
+  imageUrl: text('image_url'),
+  status: varchar('status', { length: 20 }).notNull().default('processing'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const saveCollections = pgTable(
+  'save_collections',
+  {
+    saveId: integer('save_id')
+      .notNull()
+      .references(() => saves.id, { onDelete: 'cascade' }),
+    collectionId: integer('collection_id')
+      .notNull()
+      .references(() => collections.id, { onDelete: 'cascade' }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.saveId, table.collectionId] }),
+  })
+);
+
+export const saveTags = pgTable(
+  'save_tags',
+  {
+    saveId: integer('save_id')
+      .notNull()
+      .references(() => saves.id, { onDelete: 'cascade' }),
+    tag: varchar('tag', { length: 50 }).notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.saveId, table.tag] }),
+  })
+);
+
+export const savedSearches = pgTable('saved_searches', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id')
+    .notNull()
+    .references(() => teams.id),
+  userId: integer('user_id').references(() => users.id),
+  query: text('query').notNull(),
+  label: varchar('label', { length: 100 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  lastUsedAt: timestamp('last_used_at'),
+});
+
+export const retrievals = pgTable('retrievals', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id')
+    .notNull()
+    .references(() => teams.id),
+  userId: integer('user_id').references(() => users.id),
+  saveId: integer('save_id').references(() => saves.id, { onDelete: 'set null' }),
+  query: text('query').notNull(),
+  responseText: text('response_text'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
   invitations: many(invitations),
+  collections: many(collections),
+  saves: many(saves),
+  savedSearches: many(savedSearches),
+  retrievals: many(retrievals),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
   teamMembers: many(teamMembers),
   invitationsSent: many(invitations),
+  saves: many(saves),
+  collections: many(collections),
 }));
 
 export const invitationsRelations = relations(invitations, ({ one }) => ({
@@ -112,6 +214,76 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const collectionsRelations = relations(collections, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [collections.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [collections.userId],
+    references: [users.id],
+  }),
+  saveCollections: many(saveCollections),
+}));
+
+export const savesRelations = relations(saves, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [saves.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [saves.userId],
+    references: [users.id],
+  }),
+  saveCollections: many(saveCollections),
+  saveTags: many(saveTags),
+  retrievals: many(retrievals),
+}));
+
+export const saveCollectionsRelations = relations(saveCollections, ({ one }) => ({
+  save: one(saves, {
+    fields: [saveCollections.saveId],
+    references: [saves.id],
+  }),
+  collection: one(collections, {
+    fields: [saveCollections.collectionId],
+    references: [collections.id],
+  }),
+}));
+
+export const saveTagsRelations = relations(saveTags, ({ one }) => ({
+  save: one(saves, {
+    fields: [saveTags.saveId],
+    references: [saves.id],
+  }),
+}));
+
+export const savedSearchesRelations = relations(savedSearches, ({ one }) => ({
+  team: one(teams, {
+    fields: [savedSearches.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [savedSearches.userId],
+    references: [users.id],
+  }),
+}));
+
+export const retrievalsRelations = relations(retrievals, ({ one }) => ({
+  team: one(teams, {
+    fields: [retrievals.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [retrievals.userId],
+    references: [users.id],
+  }),
+  save: one(saves, {
+    fields: [retrievals.saveId],
+    references: [saves.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Team = typeof teams.$inferSelect;
@@ -122,6 +294,18 @@ export type ActivityLog = typeof activityLogs.$inferSelect;
 export type NewActivityLog = typeof activityLogs.$inferInsert;
 export type Invitation = typeof invitations.$inferSelect;
 export type NewInvitation = typeof invitations.$inferInsert;
+export type Collection = typeof collections.$inferSelect;
+export type NewCollection = typeof collections.$inferInsert;
+export type Save = typeof saves.$inferSelect;
+export type NewSave = typeof saves.$inferInsert;
+export type SavedSearch = typeof savedSearches.$inferSelect;
+export type NewSavedSearch = typeof savedSearches.$inferInsert;
+export type Retrieval = typeof retrievals.$inferSelect;
+export type NewRetrieval = typeof retrievals.$inferInsert;
+
+export type SaveType = 'reel' | 'post' | 'screenshot' | 'link';
+export type SaveStatus = 'processing' | 'ready' | 'failed';
+
 export type TeamDataWithMembers = Team & {
   teamMembers: (TeamMember & {
     user: Pick<User, 'id' | 'name' | 'email'>;

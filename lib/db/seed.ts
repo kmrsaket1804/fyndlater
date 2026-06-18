@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './drizzle';
 import { users, teams, teamMembers } from './schema';
 import { hashPassword } from '@/lib/auth/session';
+import { seedDashboardContent } from './seed-content';
 
 async function seed() {
   const email = process.env.SEED_ADMIN_EMAIL || 'hello@fyndlater.com';
@@ -50,27 +51,32 @@ async function seed() {
     .where(eq(teamMembers.userId, user.id))
     .limit(1);
 
+  let teamId: number;
+
   if (membership.length > 0) {
+    teamId = membership[0].teamId;
     console.log('Admin team membership already exists.');
-    return;
+  } else {
+    const [team] = await db
+      .insert(teams)
+      .values({
+        name: 'FyndLater',
+        planName: 'Pro',
+        subscriptionStatus: 'active',
+      })
+      .returning();
+
+    await db.insert(teamMembers).values({
+      teamId: team.id,
+      userId: user.id,
+      role: 'owner',
+    });
+
+    teamId = team.id;
+    console.log(`Created team "${team.name}" for admin user.`);
   }
 
-  const [team] = await db
-    .insert(teams)
-    .values({
-      name: 'FyndLater',
-      planName: 'Pro',
-      subscriptionStatus: 'active',
-    })
-    .returning();
-
-  await db.insert(teamMembers).values({
-    teamId: team.id,
-    userId: user.id,
-    role: 'owner',
-  });
-
-  console.log(`Created team "${team.name}" for admin user.`);
+  await seedDashboardContent(teamId, user.id);
 }
 
 seed()

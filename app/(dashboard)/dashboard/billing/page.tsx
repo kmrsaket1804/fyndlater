@@ -13,16 +13,22 @@ import { plans } from '@/lib/payments/plans';
 import useSWR from 'swr';
 import { TeamDataWithMembers } from '@/lib/db/schema';
 import { GradientButton } from '@/components/landing/gradient-button';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
+import type { DashboardHomeData } from '@/lib/dashboard/types';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function BillingPage() {
   const { data: team } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
-  const planName = team?.planName || 'Free Trial';
+  const { data: dashboard } = useSWR<DashboardHomeData>(
+    '/api/dashboard/home',
+    fetcher
+  );
+
+  const planName = team?.planName || dashboard?.usage.planName || 'Free Trial';
   const isPro = planName.toLowerCase().includes('pro');
-  const savesUsed = 42;
-  const savesLimit = isPro ? 100 : 25;
+  const savesUsed = dashboard?.usage.savesUsed ?? 0;
+  const savesLimit = dashboard?.usage.savesLimit ?? (isPro ? 100 : 25);
   const usagePercent = Math.min((savesUsed / savesLimit) * 100, 100);
 
   return (
@@ -59,7 +65,11 @@ export default function BillingPage() {
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Saves this month</span>
               <span className="font-medium text-gray-900">
-                {savesUsed} / {savesLimit}
+                {!dashboard ? (
+                  <Loader2 className="inline h-4 w-4 animate-spin" />
+                ) : (
+                  `${savesUsed} / ${savesLimit}`
+                )}
               </span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">

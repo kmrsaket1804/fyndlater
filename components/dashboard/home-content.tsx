@@ -1,26 +1,16 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { Bell, Plus, Sparkles } from 'lucide-react';
+import { Bell, Loader2, Plus, Sparkles } from 'lucide-react';
+import useSWR from 'swr';
 import { GradientButton } from '@/components/landing/gradient-button';
 import { getGreeting } from '@/lib/dashboard/greeting';
-import {
-  collections,
-  highlights,
-  recentSaves,
-  searchSuggestions,
-  stats,
-} from '@/lib/dashboard/mock-data';
+import type { DashboardHomeData } from '@/lib/dashboard/types';
 import { User } from '@/lib/db/schema';
-import { cn } from '@/lib/utils';
+import { CollectionCard } from './collection-card';
+import { SaveCard } from './save-card';
 
-const typeBadgeColors: Record<string, string> = {
-  Reel: 'bg-pink-100 text-pink-700',
-  Post: 'bg-violet-100 text-violet-700',
-  Screenshot: 'bg-blue-100 text-blue-700',
-  Link: 'bg-amber-100 text-amber-700',
-};
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 type DashboardHomeContentProps = {
   user?: User;
@@ -28,6 +18,34 @@ type DashboardHomeContentProps = {
 
 export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
   const { time, firstName } = getGreeting(user?.name);
+  const { data, isLoading, error } = useSWR<DashboardHomeData>(
+    '/api/dashboard/home',
+    fetcher
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="rounded-2xl border border-red-100 bg-red-50 px-6 py-12 text-center">
+        <p className="text-sm text-red-600">Failed to load dashboard data.</p>
+      </div>
+    );
+  }
+
+  const {
+    stats,
+    recentSaves,
+    collections,
+    highlights,
+    searchSuggestions,
+  } = data;
 
   return (
     <div className="space-y-8 pb-8">
@@ -110,51 +128,7 @@ export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
         </div>
         <div className="grid sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 gap-4">
           {recentSaves.map((save) => (
-            <article
-              key={save.id}
-              className="group rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="relative h-36 w-full">
-                <Image
-                  src={save.image}
-                  alt={save.title}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-                <span
-                  className={cn(
-                    'absolute top-3 left-3 rounded-full px-2.5 py-0.5 text-[11px] font-medium',
-                    typeBadgeColors[save.type]
-                  )}
-                >
-                  {save.type}
-                </span>
-              </div>
-              <div className="p-4">
-                <p className="text-[11px] text-gray-400">{save.source}</p>
-                <h3 className="mt-1 font-semibold text-gray-900 line-clamp-1">
-                  {save.title}
-                </h3>
-                <p className="mt-1 text-xs text-gray-500 line-clamp-2">
-                  {save.description}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {save.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400">
-                  <span>{save.collection}</span>
-                  <span>{save.savedAt}</span>
-                </div>
-              </div>
-            </article>
+            <SaveCard key={save.id} save={save} />
           ))}
         </div>
       </section>
@@ -173,40 +147,7 @@ export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
         </div>
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {collections.map((collection) => (
-            <Link
-              key={collection.id}
-              href="/dashboard/collections"
-              className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-2.5">
-                <div
-                  className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-white text-sm',
-                    collection.gradient
-                  )}
-                >
-                  {collection.icon}
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {collection.name}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {collection.count} items
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {collection.previews.map((preview, i) => (
-                  <div
-                    key={i}
-                    className="flex aspect-square items-center justify-center rounded-xl bg-gray-50 text-lg"
-                  >
-                    {preview}
-                  </div>
-                ))}
-              </div>
-            </Link>
+            <CollectionCard key={collection.id} collection={collection} />
           ))}
         </div>
       </section>
@@ -219,10 +160,7 @@ export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
           {highlights.map((highlight) => (
             <div
               key={highlight.id}
-              className={cn(
-                'rounded-2xl px-4 py-3.5 text-sm font-medium',
-                highlight.color
-              )}
+              className={`rounded-2xl px-4 py-3.5 text-sm font-medium ${highlight.color}`}
             >
               <span className="mr-2">{highlight.icon}</span>
               {highlight.text}

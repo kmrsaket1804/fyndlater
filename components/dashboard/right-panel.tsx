@@ -2,21 +2,32 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Send, Sparkles } from 'lucide-react';
-import { chatMessages } from '@/lib/dashboard/mock-data';
-import { TeamDataWithMembers } from '@/lib/db/schema';
+import { Loader2, Send, Sparkles } from 'lucide-react';
+import useSWR from 'swr';
+import type { DashboardHomeData } from '@/lib/dashboard/types';
 import { cn } from '@/lib/utils';
 
-type DashboardRightPanelProps = {
-  team?: TeamDataWithMembers;
-};
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function DashboardRightPanel({ team }: DashboardRightPanelProps) {
-  const planName = team?.planName || 'Free Trial';
-  const isPro = planName.toLowerCase().includes('pro');
-  const savesUsed = 42;
-  const savesLimit = isPro ? 100 : 25;
-  const usagePercent = Math.min((savesUsed / savesLimit) * 100, 100);
+export function DashboardRightPanel() {
+  const { data, isLoading } = useSWR<DashboardHomeData>(
+    '/api/dashboard/home',
+    fetcher
+  );
+
+  if (isLoading || !data) {
+    return (
+      <aside className="hidden xl:flex w-[340px] shrink-0 items-center justify-center border-l border-gray-100 bg-[#faf9fc]">
+        <Loader2 className="h-6 w-6 animate-spin text-violet-500" />
+      </aside>
+    );
+  }
+
+  const { chatMessages, usage } = data;
+  const usagePercent = Math.min(
+    (usage.savesUsed / usage.savesLimit) * 100,
+    100
+  );
 
   return (
     <aside className="hidden xl:flex w-[340px] shrink-0 flex-col gap-4 border-l border-gray-100 bg-[#faf9fc] p-5 overflow-y-auto">
@@ -45,15 +56,17 @@ export function DashboardRightPanel({ team }: DashboardRightPanelProps) {
                   <p className="text-gray-600 text-xs">{message.text}</p>
                   {message.save && (
                     <div className="rounded-xl border border-gray-100 overflow-hidden">
-                      <div className="relative h-24 w-full">
-                        <Image
-                          src={message.save.image}
-                          alt={message.save.title}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
+                      {message.save.image && (
+                        <div className="relative h-24 w-full">
+                          <Image
+                            src={message.save.image}
+                            alt={message.save.title}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      )}
                       <div className="p-3">
                         <p className="text-xs font-medium text-gray-900 line-clamp-1">
                           {message.save.title}
@@ -100,7 +113,9 @@ export function DashboardRightPanel({ team }: DashboardRightPanelProps) {
 
       <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">{planName}</h3>
+          <h3 className="text-sm font-semibold text-gray-900">
+            {usage.planName}
+          </h3>
           <Link
             href="/dashboard/billing"
             className="text-xs font-medium text-violet-600 hover:text-violet-700"
@@ -109,7 +124,7 @@ export function DashboardRightPanel({ team }: DashboardRightPanelProps) {
           </Link>
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          {savesUsed} / {savesLimit} saves used this month
+          {usage.savesUsed} / {usage.savesLimit} saves used this month
         </p>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
           <div
@@ -117,9 +132,6 @@ export function DashboardRightPanel({ team }: DashboardRightPanelProps) {
             style={{ width: `${usagePercent}%` }}
           />
         </div>
-        <p className="mt-2 text-[11px] text-gray-400">
-          Renews on Apr 1, 2026
-        </p>
       </div>
 
       <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-pink-50 p-4">

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import useSWR from 'swr';
-import { User, TeamDataWithMembers } from '@/lib/db/schema';
+import { User } from '@/lib/db/schema';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { DashboardRightPanel } from '@/components/dashboard/right-panel';
 
@@ -17,7 +17,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { data: user } = useSWR<User>('/api/user', fetcher);
-  const { data: team } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
   const showRightPanel = pathname === '/dashboard';
 
   return (
@@ -33,7 +32,7 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {children}
         </main>
-        {showRightPanel && <DashboardRightPanel team={team} />}
+        {showRightPanel && <DashboardRightPanel />}
       </div>
     </div>
   );
