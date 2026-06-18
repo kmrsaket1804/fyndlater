@@ -3,7 +3,7 @@ import { Check, Crown, Gift } from 'lucide-react';
 import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
 import { SubmitButton } from './submit-button';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 const planMeta: Record<
   string,
@@ -32,10 +32,19 @@ const planMeta: Record<
 };
 
 export default async function PricingPage() {
-  const [prices, products] = await Promise.all([
-    getStripePrices(),
-    getStripeProducts(),
-  ]);
+  let prices: Awaited<ReturnType<typeof getStripePrices>> = [];
+  let products: Awaited<ReturnType<typeof getStripeProducts>> = [];
+
+  if (process.env.STRIPE_SECRET_KEY) {
+    try {
+      [prices, products] = await Promise.all([
+        getStripePrices(),
+        getStripeProducts(),
+      ]);
+    } catch (error) {
+      console.error('Failed to load Stripe pricing:', error);
+    }
+  }
 
   const basePlan = products.find((product) => product.name === 'Base');
   const plusPlan = products.find((product) => product.name === 'Plus');
