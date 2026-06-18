@@ -1,10 +1,11 @@
 import type { Config } from 'drizzle-kit';
+import { getPostgresUrl } from './lib/db/connection';
 
 export default {
   schema: './lib/db/schema.ts',
   out: './lib/db/migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.POSTGRES_URL!,
+    url: getPostgresUrl(),
   },
 } satisfies Config;

@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 import dotenv from 'dotenv';
+import { getPostgresUrl } from './connection';
 
 dotenv.config();
 
@@ -10,18 +11,6 @@ type Client = ReturnType<typeof postgres>;
 
 let client: Client | undefined;
 let database: Database | undefined;
-
-function getPostgresUrl() {
-  const url = process.env.POSTGRES_URL;
-  if (!url) {
-    throw new Error('POSTGRES_URL environment variable is not set');
-  }
-  // Neon pooler works best without channel_binding for postgres.js
-  return url
-    .replace('?channel_binding=require&', '?')
-    .replace('&channel_binding=require', '')
-    .replace('?channel_binding=require', '');
-}
 
 function getClient() {
   if (!client) {
