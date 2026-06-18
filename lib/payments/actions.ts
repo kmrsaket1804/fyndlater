@@ -8,7 +8,8 @@ import { getUser } from '@/lib/db/queries';
 export const checkoutAction = withTeam(async (formData, team) => {
   const planId = formData.get('planId') as string;
   const user = await getUser();
-  await createCashfreeCheckout({ team, user, planId });
+  const { redirectTo } = await createCashfreeCheckout({ team, user, planId });
+  redirect(redirectTo);
 });
 
 export async function customerPortalAction() {

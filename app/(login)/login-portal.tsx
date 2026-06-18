@@ -38,6 +38,13 @@ export function LoginPortal({
     if (queryMode === 'signin') setMode('signin');
   }, [queryMode]);
 
+  useEffect(() => {
+    if (state?.redirectTo) {
+      router.replace(state.redirectTo);
+      router.refresh();
+    }
+  }, [state?.redirectTo, router]);
+
   function switchMode(nextMode: AuthMode) {
     setMode(nextMode);
     const params = new URLSearchParams(searchParams.toString());

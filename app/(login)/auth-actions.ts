@@ -2,7 +2,6 @@
 
 import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
-import { redirect } from 'next/navigation';
 import { db } from '@/lib/db/drizzle';
 import {
   users,
@@ -54,15 +53,6 @@ const authenticateSchema = signInSchema.extend({
     .transform((value) => (value ? value : undefined)),
 });
 
-function isNextNavigationError(error: unknown) {
-  if (!(error instanceof Error)) return false;
-  const digest = (error as Error & { digest?: string }).digest;
-  return (
-    typeof digest === 'string' &&
-    (digest.startsWith('NEXT_REDIRECT') || digest.startsWith('NEXT_NOT_FOUND'))
-  );
-}
-
 export const authenticate = validatedAction(
   authenticateSchema,
   async (data, formData) => {
@@ -80,9 +70,6 @@ export const authenticate = validatedAction(
 
       return await signInHandler(data, formData);
     } catch (error) {
-      if (isNextNavigationError(error)) {
-        throw error;
-      }
       console.error('Authentication failed:', error);
       return {
         error: 'Something went wrong. Please try again.',
@@ -147,7 +134,7 @@ async function signInHandler(
     });
   }
 
-  redirect('/dashboard');
+  return { redirectTo: '/dashboard' };
 }
 
 async function signUpHandler(
@@ -265,7 +252,7 @@ async function signUpHandler(
     });
   }
 
-  redirect('/dashboard');
+  return { redirectTo: '/dashboard' };
 }
 
 export const signIn = validatedAction(signInSchema, signInHandler);

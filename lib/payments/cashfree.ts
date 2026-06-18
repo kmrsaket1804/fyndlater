@@ -1,5 +1,4 @@
 import { Cashfree, CFEnvironment } from 'cashfree-pg';
-import { redirect } from 'next/navigation';
 import { Team, User } from '@/lib/db/schema';
 import { updateTeamSubscription } from '@/lib/db/queries';
 import { getPlan, type PlanId } from './plans';
@@ -95,24 +94,26 @@ export async function createCashfreeCheckout({
   team: Team | null;
   user: User | null;
   planId: string;
-}) {
+}): Promise<{ redirectTo: string }> {
   if (!team || !user) {
-    redirect(`/login?mode=signup&redirect=checkout&planId=${planId}`);
+    return {
+      redirectTo: `/login?mode=signup&redirect=checkout&planId=${planId}`,
+    };
   }
 
   const plan = getPlan(planId);
   if (!plan) {
-    redirect('/pricing');
+    return { redirectTo: '/pricing' };
   }
 
   if (plan.amountInr === 0) {
-    redirect('/dashboard');
+    return { redirectTo: '/dashboard' };
   }
 
   const order = await createCashfreeOrder({ team, user, planId: plan.id });
-  redirect(
-    `/checkout?session_id=${encodeURIComponent(order.paymentSessionId)}&plan=${plan.id}`
-  );
+  return {
+    redirectTo: `/checkout?session_id=${encodeURIComponent(order.paymentSessionId)}&plan=${plan.id}`,
+  };
 }
 
 export async function verifyCashfreeOrder(orderId: string) {
