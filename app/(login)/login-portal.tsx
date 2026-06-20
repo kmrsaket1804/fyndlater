@@ -5,7 +5,8 @@ import { useActionState, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RecaptchaField } from '@/components/recaptcha-field';
+import { RecaptchaNotice } from '@/components/recaptcha-notice';
+import { executeRecaptcha } from '@/lib/recaptcha-client';
 import { Loader2, Shield, Sparkles } from 'lucide-react';
 import { authenticate } from './auth-actions';
 import { ActionState } from '@/lib/auth/middleware';
@@ -32,7 +33,7 @@ export function LoginPortal({
     authenticate,
     { error: '' }
   );
-  const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState('');
 
   useEffect(() => {
     if (queryMode === 'signup') setMode('signup');
@@ -46,11 +47,26 @@ export function LoginPortal({
     }
   }, [state?.redirectTo, router]);
 
-  useEffect(() => {
-    if (state?.error) {
-      setCaptchaKey((key) => key + 1);
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCaptchaError('');
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const token = await executeRecaptcha(
+        mode === 'signin' ? 'login' : 'signup'
+      );
+      if (token) {
+        formData.set('recaptchaToken', token);
+      }
+    } catch {
+      setCaptchaError('reCAPTCHA failed to load. Please refresh and try again.');
+      return;
     }
-  }, [state?.error]);
+
+    formAction(formData);
+  }
 
   function switchMode(nextMode: AuthMode) {
     setMode(nextMode);
@@ -122,7 +138,7 @@ export function LoginPortal({
             ))}
           </div>
 
-          <form className="space-y-5" action={formAction}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <input type="hidden" name="mode" value={mode} />
             <input type="hidden" name="redirect" value={redirect || ''} />
             <input type="hidden" name="planId" value={planId || ''} />
@@ -160,13 +176,11 @@ export function LoginPortal({
               />
             </div>
 
-            {state?.error && (
+            {(state?.error || captchaError) && (
               <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
-                {state.error}
+                {captchaError || state?.error}
               </div>
             )}
-
-            <RecaptchaField key={captchaKey} />
 
             <button
               type="submit"
@@ -197,6 +211,9 @@ export function LoginPortal({
             </Link>
             .
           </p>
+          <div className="mt-3">
+            <RecaptchaNotice />
+          </div>
         </div>
       </div>
     </div>

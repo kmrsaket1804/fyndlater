@@ -39,11 +39,20 @@ export async function verifyRecaptchaToken(
 
   const data = (await response.json()) as {
     success: boolean;
+    score?: number;
+    action?: string;
     'error-codes'?: string[];
   };
 
   if (!data.success) {
     console.error('reCAPTCHA verification failed:', data['error-codes']);
+    return {
+      success: false,
+      error: 'reCAPTCHA verification failed. Please try again.',
+    };
+  }
+
+  if (typeof data.score === 'number' && data.score < 0.5) {
     return {
       success: false,
       error: 'reCAPTCHA verification failed. Please try again.',

@@ -27,9 +27,9 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-20 lg:py-28 bg-gray-50/80">
+    <section id="how-it-works" className="py-12 lg:py-16 bg-gray-50/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mb-14">
+        <div className="max-w-2xl mb-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
             How it works — steps
           </p>
@@ -41,7 +41,7 @@ export function HowItWorks() {
           </p>
         </div>
 
-        <div className="flex flex-col items-stretch gap-12 md:flex-row md:items-start md:justify-center md:gap-3 lg:gap-6">
+        <div className="flex flex-col items-stretch gap-8 md:flex-row md:items-start md:justify-center md:gap-3 lg:gap-6">
           {steps.map((step, index) => (
             <div key={step.title} className="flex flex-col md:flex-row md:items-start">
               <div className="flex-1 max-w-sm mx-auto md:max-w-none md:mx-0 w-full">

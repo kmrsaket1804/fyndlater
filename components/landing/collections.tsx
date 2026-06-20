@@ -33,9 +33,9 @@ const collections = [
 
 export function Collections() {
   return (
-    <section className="py-20 lg:py-28 bg-white">
+    <section className="py-12 lg:py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-8">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
             Your saved posts are where good ideas go to disappear.
           </h2>

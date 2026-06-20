@@ -35,9 +35,9 @@ const useCases = [
 
 export function UseCases() {
   return (
-    <section id="use-cases" className="py-20 lg:py-28 bg-white">
+    <section id="use-cases" className="py-12 lg:py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-8">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
             Save anything worth coming back to.
           </h2>

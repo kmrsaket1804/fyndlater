@@ -4,7 +4,7 @@ import { fayeInstagramUrl } from '@/lib/config';
 
 export function FinalCTA() {
   return (
-    <section className="py-20 lg:py-28">
+    <section className="py-12 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-violet-100 via-purple-50/80 to-pink-50 border border-violet-100/50">
           <div className="relative flex flex-col items-center gap-8 px-6 py-10 sm:px-10 sm:py-12 md:flex-row md:items-end md:justify-between md:gap-4 md:px-8 md:py-0 md:min-h-[240px] lg:min-h-[260px]">

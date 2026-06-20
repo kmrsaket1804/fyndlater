@@ -29,11 +29,17 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-20 lg:py-28 bg-gray-50/80">
+    <section className="py-12 lg:py-16 bg-gray-50/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-10">
-          Feature illustrations
-        </p>
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+            Faye turns saved posts into a memory you can actually use.
+          </h2>
+          <p className="mt-4 text-lg text-gray-600">
+            She reads what you send, organizes it automatically, and finds it
+            the moment you ask.
+          </p>
+        </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
           {features.map((feature) => (

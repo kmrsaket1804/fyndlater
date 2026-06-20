@@ -4,7 +4,7 @@ import { GradientButton } from './gradient-button';
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-12 pb-20 lg:pt-16 lg:pb-28">
+    <section className="relative overflow-hidden pt-10 pb-12 lg:pt-12 lg:pb-16">
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-violet-50/60 via-white to-white" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center">
@@ -43,7 +43,7 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="mt-14 lg:mt-0 relative">
+          <div className="mt-10 lg:mt-0 relative">
             <div className="relative mx-auto max-w-md lg:max-w-none">
               <PhoneMockup />
               <RetrievalCard />

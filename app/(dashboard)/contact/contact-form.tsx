@@ -1,10 +1,11 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useState } from 'react';
 import { Loader2, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RecaptchaField } from '@/components/recaptcha-field';
+import { RecaptchaNotice } from '@/components/recaptcha-notice';
+import { executeRecaptcha } from '@/lib/recaptcha-client';
 import { submitContactForm, type ContactFormState } from './actions';
 
 const initialState: ContactFormState = { success: false, error: '' };
@@ -14,13 +15,26 @@ export function ContactForm() {
     submitContactForm,
     initialState
   );
-  const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState('');
 
-  useEffect(() => {
-    if (state.error) {
-      setCaptchaKey((key) => key + 1);
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCaptchaError('');
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const token = await executeRecaptcha('contact');
+      if (token) {
+        formData.set('recaptchaToken', token);
+      }
+    } catch {
+      setCaptchaError('reCAPTCHA failed to load. Please refresh and try again.');
+      return;
     }
-  }, [state.error]);
+
+    formAction(formData);
+  }
 
   if (state.success) {
     return (
@@ -36,7 +50,7 @@ export function ContactForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid sm:grid-cols-2 gap-5">
         <div>
           <Label htmlFor="name" className="text-sm font-medium text-gray-700">
@@ -96,11 +110,9 @@ export function ContactForm() {
         />
       </div>
 
-      {state.error && (
-        <p className="text-sm text-red-500">{state.error}</p>
+      {(state.error || captchaError) && (
+        <p className="text-sm text-red-500">{captchaError || state.error}</p>
       )}
-
-      <RecaptchaField key={captchaKey} />
 
       <button
         type="submit"
@@ -131,6 +143,7 @@ export function ContactForm() {
         </a>
         .
       </p>
+      <RecaptchaNotice />
     </form>
   );
 }
