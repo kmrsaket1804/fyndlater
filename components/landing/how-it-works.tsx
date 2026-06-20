@@ -1,28 +1,27 @@
-import {
-  Camera,
-  FolderOpen,
-  Instagram,
-  Link2,
-  MessageCircle,
-  Search,
-  Send,
-} from 'lucide-react';
+import Image from 'next/image';
+import { ChevronRight } from 'lucide-react';
 
 const steps = [
   {
-    title: 'Send it to Faye',
-    description: 'Share anything worth remembering.',
-    visual: <SendVisual />,
+    number: 1,
+    title: 'Send to Faye',
+    description: 'Share anything on Instagram, Faye receives it.',
+    image: '/assets/send-to-faye.png',
+    alt: 'Send reels, links, and screenshots to Faye on Instagram',
   },
   {
-    title: 'Faye organizes it',
-    description: 'Titles, tags, summaries, and collections — automatically.',
-    visual: <OrganizeVisual />,
+    number: 2,
+    title: 'Faye does the work',
+    description: 'She understands, summarizes, tags & organizes.',
+    image: '/assets/faye-does-the-work.png',
+    alt: 'Faye organizes your saves with tags and summaries',
   },
   {
-    title: 'Ask for it later',
-    description: 'Search naturally and get the exact thing back.',
-    visual: <RetrieveVisual />,
+    number: 3,
+    title: 'You find it later',
+    description: 'Ask anything. Faye finds it instantly.',
+    image: '/assets/find-later.png',
+    alt: 'Search your collections and find saved content instantly',
   },
 ];
 
@@ -30,8 +29,11 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="py-20 lg:py-28 bg-gray-50/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+        <div className="max-w-2xl mb-14">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+            How it works — steps
+          </p>
+          <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
             How it works
           </h2>
           <p className="mt-4 text-lg text-gray-600">
@@ -39,87 +41,45 @@ export function HowItWorks() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {steps.map((step, i) => (
-            <div key={step.title} className="text-center">
-              <div className="mb-5">{step.visual}</div>
-              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-violet-100 text-violet-600 text-sm font-bold mb-3">
-                {i + 1}
+        <div className="flex flex-col items-stretch gap-12 md:flex-row md:items-start md:justify-center md:gap-3 lg:gap-6">
+          {steps.map((step, index) => (
+            <div key={step.title} className="flex flex-col md:flex-row md:items-start">
+              <div className="flex-1 max-w-sm mx-auto md:max-w-none md:mx-0 w-full">
+                <div className="rounded-2xl bg-gray-100/80 p-4 sm:p-5">
+                  <Image
+                    src={step.image}
+                    alt={step.alt}
+                    width={1254}
+                    height={1254}
+                    className="h-auto w-full object-contain"
+                  />
+                </div>
+
+                <div className="mt-5 px-1">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500 text-sm font-bold text-white">
+                    {step.number}
+                  </div>
+                  <h3 className="mt-3 text-lg font-bold text-gray-900">
+                    {step.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {step.title}
-              </h3>
-              <p className="mt-2 text-sm text-gray-600">{step.description}</p>
+
+              {index < steps.length - 1 && (
+                <div
+                  className="hidden md:flex shrink-0 items-center self-center px-1 lg:px-3 pt-16"
+                  aria-hidden
+                >
+                  <ChevronRight className="h-6 w-6 text-violet-400 lg:h-7 lg:w-7" />
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
     </section>
-  );
-}
-
-function SendVisual() {
-  return (
-    <div className="mx-auto w-full max-w-[220px] h-40 rounded-3xl bg-white border border-gray-100 shadow-sm flex flex-col items-center justify-center gap-3 p-4">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-          <Instagram className="w-5 h-5 text-white" />
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-          <Link2 className="w-5 h-5 text-blue-500" />
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
-          <Camera className="w-5 h-5 text-violet-500" />
-        </div>
-      </div>
-      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 flex items-center justify-center shadow-md">
-        <Send className="w-5 h-5 text-white" />
-      </div>
-      <p className="text-xs text-gray-400">Reels · Links · Screenshots</p>
-    </div>
-  );
-}
-
-function OrganizeVisual() {
-  return (
-    <div className="mx-auto w-full max-w-[220px] h-40 rounded-3xl bg-white border border-gray-100 shadow-sm flex flex-col items-center justify-center p-4 relative">
-      <FolderOpen className="w-10 h-10 text-violet-500 mb-2" />
-      <p className="text-sm font-semibold text-gray-900">D2C Marketing</p>
-      <div className="flex flex-wrap gap-1.5 mt-2 justify-center">
-        {['marketing', 'packaging', 'ideas'].map((tag) => (
-          <span
-            key={tag}
-            className="text-[10px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-100"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RetrieveVisual() {
-  return (
-    <div className="mx-auto w-full max-w-[220px] rounded-3xl bg-white border border-gray-100 shadow-sm p-4">
-      <div className="flex items-center gap-2 rounded-full bg-gray-50 border border-gray-100 px-3 py-2">
-        <Search className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-[11px] text-gray-500 truncate">
-          Find that packaging reel I saved
-        </span>
-      </div>
-      <div className="mt-3 rounded-xl border border-violet-100 bg-violet-50/50 p-2 flex items-center gap-2">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-rose-100 flex items-center justify-center text-lg shrink-0">
-          📦
-        </div>
-        <div className="text-left min-w-0">
-          <p className="text-[11px] font-medium text-gray-900 truncate">
-            Premium D2C Packaging
-          </p>
-          <p className="text-[10px] text-violet-500">Found in 0.3s</p>
-        </div>
-      </div>
-      <MessageCircle className="w-4 h-4 text-violet-300 mx-auto mt-2" />
-    </div>
   );
 }

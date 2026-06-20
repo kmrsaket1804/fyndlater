@@ -5,6 +5,7 @@ import { useActionState, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RecaptchaField } from '@/components/recaptcha-field';
 import { Loader2, Shield, Sparkles } from 'lucide-react';
 import { authenticate } from './auth-actions';
 import { ActionState } from '@/lib/auth/middleware';
@@ -26,12 +27,12 @@ export function LoginPortal({
 
   const redirect = searchParams.get('redirect');
   const planId = searchParams.get('planId');
-  const inviteId = searchParams.get('inviteId');
 
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     authenticate,
     { error: '' }
   );
+  const [captchaKey, setCaptchaKey] = useState(0);
 
   useEffect(() => {
     if (queryMode === 'signup') setMode('signup');
@@ -44,6 +45,12 @@ export function LoginPortal({
       router.refresh();
     }
   }, [state?.redirectTo, router]);
+
+  useEffect(() => {
+    if (state?.error) {
+      setCaptchaKey((key) => key + 1);
+    }
+  }, [state?.error]);
 
   function switchMode(nextMode: AuthMode) {
     setMode(nextMode);
@@ -119,7 +126,6 @@ export function LoginPortal({
             <input type="hidden" name="mode" value={mode} />
             <input type="hidden" name="redirect" value={redirect || ''} />
             <input type="hidden" name="planId" value={planId || ''} />
-            <input type="hidden" name="inviteId" value={inviteId || ''} />
 
             <div>
               <Label htmlFor="email">Email</Label>
@@ -159,6 +165,8 @@ export function LoginPortal({
                 {state.error}
               </div>
             )}
+
+            <RecaptchaField key={captchaKey} />
 
             <button
               type="submit"

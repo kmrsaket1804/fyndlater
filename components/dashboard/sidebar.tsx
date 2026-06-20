@@ -60,7 +60,7 @@ export function DashboardSidebar({
   return (
     <>
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
-        <Logo />
+        <Logo variant="icon" />
         <button
           type="button"
           onClick={onMobileToggle}

@@ -120,21 +120,7 @@ export async function getTeamForUser() {
     const result = await db.query.teamMembers.findFirst({
       where: eq(teamMembers.userId, user.id),
       with: {
-        team: {
-          with: {
-            teamMembers: {
-              with: {
-                user: {
-                  columns: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+        team: true,
       },
     });
 

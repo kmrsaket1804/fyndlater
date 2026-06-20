@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: 'FyndLater — Your AI memory for everything you save',
   description:
     'Send it to Faye. Fynd it later. FyndLater is your AI memory assistant — save reels, posts, links, and ideas on Instagram, then find them later with natural language.',
+  icons: {
+    icon: '/assets/favicon.ico',
+    apple: '/assets/fyndlater-logo-sq.png',
+  },
 };
 
 export const viewport: Viewport = {

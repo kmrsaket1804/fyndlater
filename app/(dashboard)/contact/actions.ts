@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -30,6 +31,13 @@ export async function submitContactForm(
       success: false,
       error: parsed.error.errors[0]?.message || 'Please check your input.',
     };
+  }
+
+  const recaptcha = await verifyRecaptchaToken(
+    formData.get('recaptchaToken') as string | null
+  );
+  if (!recaptcha.success) {
+    return { success: false, error: recaptcha.error };
   }
 
   // Contact submissions can be wired to email/CRM later.

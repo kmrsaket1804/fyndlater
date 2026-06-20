@@ -44,7 +44,7 @@ export default function ServicesPage() {
           Subscription plans
         </h2>
         <p className="text-gray-600 mb-10">
-          Digital SaaS subscriptions for individuals and teams. Billed in INR.
+          Digital SaaS subscriptions for individuals. Billed in INR.
         </p>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl">

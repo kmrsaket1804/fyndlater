@@ -11,7 +11,7 @@ import {
 import { customerPortalAction } from '@/lib/payments/actions';
 import { plans } from '@/lib/payments/plans';
 import useSWR from 'swr';
-import { TeamDataWithMembers } from '@/lib/db/schema';
+import { Team } from '@/lib/db/schema';
 import { GradientButton } from '@/components/landing/gradient-button';
 import { Check, Loader2 } from 'lucide-react';
 import type { DashboardHomeData } from '@/lib/dashboard/types';
@@ -19,7 +19,7 @@ import type { DashboardHomeData } from '@/lib/dashboard/types';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function BillingPage() {
-  const { data: team } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
+  const { data: team } = useSWR<Team>('/api/team', fetcher);
   const { data: dashboard } = useSWR<DashboardHomeData>(
     '/api/dashboard/home',
     fetcher

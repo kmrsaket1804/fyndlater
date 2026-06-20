@@ -1,9 +1,10 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { Loader2, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RecaptchaField } from '@/components/recaptcha-field';
 import { submitContactForm, type ContactFormState } from './actions';
 
 const initialState: ContactFormState = { success: false, error: '' };
@@ -13,6 +14,13 @@ export function ContactForm() {
     submitContactForm,
     initialState
   );
+  const [captchaKey, setCaptchaKey] = useState(0);
+
+  useEffect(() => {
+    if (state.error) {
+      setCaptchaKey((key) => key + 1);
+    }
+  }, [state.error]);
 
   if (state.success) {
     return (
@@ -91,6 +99,8 @@ export function ContactForm() {
       {state.error && (
         <p className="text-sm text-red-500">{state.error}</p>
       )}
+
+      <RecaptchaField key={captchaKey} />
 
       <button
         type="submit"

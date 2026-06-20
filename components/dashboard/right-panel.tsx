@@ -82,28 +82,6 @@ export function DashboardRightPanel() {
           />
         </div>
       </div>
-
-      <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-pink-50 p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-lg shadow-sm">
-            ✨
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              Get more from Faye
-            </p>
-            <p className="mt-1 text-xs text-gray-600 leading-relaxed">
-              Invite teammates and build collections together.
-            </p>
-            <button
-              type="button"
-              className="mt-3 rounded-full bg-white px-4 py-2 text-xs font-medium text-violet-700 shadow-sm hover:shadow transition-shadow"
-            >
-              Invite teammates
-            </button>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }

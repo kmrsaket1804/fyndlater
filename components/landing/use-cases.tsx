@@ -1,39 +1,35 @@
+import Image from 'next/image';
 import {
-  BookOpen,
-  Lightbulb,
+  Briefcase,
+  ChefHat,
+  Plane,
   ShoppingBag,
-  Smartphone,
-  TrendingUp,
 } from 'lucide-react';
 
 const useCases = [
   {
-    title: 'Creators',
-    description: 'hooks, captions, trends',
-    icon: Smartphone,
+    title: 'Recipes',
+    quote: 'Show me the pasta recipes I saved last week',
+    icon: ChefHat,
     gradient: 'from-pink-400 to-rose-500',
-    visual: '📱',
   },
   {
-    title: 'Founders',
-    description: 'ideas, competitors, growth tactics',
-    icon: TrendingUp,
-    gradient: 'from-violet-400 to-purple-500',
-    visual: '📈',
+    title: 'Business',
+    quote: 'Find that reel about premium packaging',
+    icon: Briefcase,
+    gradient: 'from-violet-400 to-purple-600',
   },
   {
-    title: 'Everyday life',
-    description: 'recipes, outfits, travel, shopping',
+    title: 'Travel',
+    quote: 'What did I save for my Japan trip?',
+    icon: Plane,
+    gradient: 'from-sky-400 to-blue-500',
+  },
+  {
+    title: 'Shopping',
+    quote: 'Show me the Costco finds I saved',
     icon: ShoppingBag,
-    gradient: 'from-blue-400 to-cyan-400',
-    visual: '🧳',
-  },
-  {
-    title: 'Learners',
-    description: 'threads, explainers, frameworks',
-    icon: BookOpen,
-    gradient: 'from-amber-400 to-orange-400',
-    visual: '📚',
+    gradient: 'from-amber-400 to-orange-500',
   },
 ];
 
@@ -55,21 +51,30 @@ export function UseCases() {
           {useCases.map((useCase) => (
             <div
               key={useCase.title}
-              className="group rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all p-6 flex gap-5"
+              className="flex gap-5 rounded-2xl border border-gray-100 bg-white p-5 sm:p-6 shadow-sm"
             >
               <div
-                className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${useCase.gradient} flex items-center justify-center shrink-0 shadow-sm`}
+                className={`flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${useCase.gradient} shadow-sm`}
               >
-                <useCase.icon className="w-6 h-6 text-white" />
+                <useCase.icon className="h-8 w-8 text-white" strokeWidth={1.75} />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-bold text-gray-900">
                   {useCase.title}
                 </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {useCase.description}
+                <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">
+                  &ldquo;{useCase.quote}&rdquo;
                 </p>
-                <div className="mt-3 text-2xl">{useCase.visual}</div>
+                <div className="mt-3 overflow-hidden rounded-full h-9 w-9 border-2 border-white shadow-sm">
+                  <Image
+                    src="/assets/faye-avatar.png"
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="h-full w-full object-cover object-top scale-150"
+                  />
+                </div>
               </div>
             </div>
           ))}

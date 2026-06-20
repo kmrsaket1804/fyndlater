@@ -1,14 +1,13 @@
 'use server';
 
 import { z } from 'zod';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import {
   users,
   teams,
   teamMembers,
   activityLogs,
-  invitations,
   type NewUser,
   type NewTeam,
   type NewTeamMember,
@@ -17,6 +16,7 @@ import {
 } from '@/lib/db/schema';
 import { comparePasswords, hashPassword, setSession } from '@/lib/auth/session';
 import { validatedAction } from '@/lib/auth/middleware';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 async function logActivity(
   teamId: number | null | undefined,
@@ -42,27 +42,32 @@ const signInSchema = z.object({
 const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  inviteId: z.string().optional(),
 });
 
 const authenticateSchema = signInSchema.extend({
   mode: z.enum(['signin', 'signup']),
-  inviteId: z
-    .string()
-    .optional()
-    .transform((value) => (value ? value : undefined)),
 });
 
 export const authenticate = validatedAction(
   authenticateSchema,
   async (data, formData) => {
+    const recaptcha = await verifyRecaptchaToken(
+      formData.get('recaptchaToken') as string | null
+    );
+    if (!recaptcha.success) {
+      return {
+        error: recaptcha.error,
+        email: data.email,
+        password: data.password,
+      };
+    }
+
     try {
       if (data.mode === 'signup') {
         return await signUpHandler(
           {
             email: data.email,
             password: data.password,
-            inviteId: data.inviteId,
           },
           formData
         );
@@ -141,7 +146,7 @@ async function signUpHandler(
   data: z.infer<typeof signUpSchema>,
   formData: FormData
 ) {
-  const { email, password, inviteId } = data;
+  const { email, password } = data;
 
   const existingUser = await db
     .select()
@@ -175,70 +180,29 @@ async function signUpHandler(
     };
   }
 
-  let teamId: number;
-  let userRole: string;
-  let createdTeam: typeof teams.$inferSelect | null = null;
+  const newTeam: NewTeam = {
+    name: `${email.split('@')[0]}'s saves`,
+  };
 
-  if (inviteId) {
-    const [invitation] = await db
-      .select()
-      .from(invitations)
-      .where(
-        and(
-          eq(invitations.id, parseInt(inviteId)),
-          eq(invitations.email, email),
-          eq(invitations.status, 'pending')
-        )
-      )
-      .limit(1);
+  const [createdTeam] = await db.insert(teams).values(newTeam).returning();
 
-    if (!invitation) {
-      return { error: 'Invalid or expired invitation.', email, password };
-    }
-
-    teamId = invitation.teamId;
-    userRole = invitation.role;
-
-    await db
-      .update(invitations)
-      .set({ status: 'accepted' })
-      .where(eq(invitations.id, invitation.id));
-
-    await logActivity(teamId, createdUser.id, ActivityType.ACCEPT_INVITATION);
-
-    [createdTeam] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, teamId))
-      .limit(1);
-  } else {
-    const newTeam: NewTeam = {
-      name: `${email.split('@')[0]}'s saves`,
+  if (!createdTeam) {
+    return {
+      error: 'Failed to create workspace. Please try again.',
+      email,
+      password,
     };
-
-    [createdTeam] = await db.insert(teams).values(newTeam).returning();
-
-    if (!createdTeam) {
-      return {
-        error: 'Failed to create workspace. Please try again.',
-        email,
-        password,
-      };
-    }
-
-    teamId = createdTeam.id;
-    userRole = 'owner';
-    await logActivity(teamId, createdUser.id, ActivityType.CREATE_TEAM);
   }
 
   const newTeamMember: NewTeamMember = {
     userId: createdUser.id,
-    teamId,
-    role: userRole,
+    teamId: createdTeam.id,
+    role: 'owner',
   };
 
   await db.insert(teamMembers).values(newTeamMember);
-  await logActivity(teamId, createdUser.id, ActivityType.SIGN_UP);
+  await logActivity(createdTeam.id, createdUser.id, ActivityType.CREATE_TEAM);
+  await logActivity(createdTeam.id, createdUser.id, ActivityType.SIGN_UP);
   await setSession(createdUser);
 
   const redirectTo = formData.get('redirect') as string | null;

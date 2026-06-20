@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Bell, Loader2, Plus, Sparkles } from 'lucide-react';
 import useSWR from 'swr';
 import { GradientButton } from '@/components/landing/gradient-button';
 import { getGreeting } from '@/lib/dashboard/greeting';
 import type { DashboardHomeData } from '@/lib/dashboard/types';
 import { User } from '@/lib/db/schema';
+import { AddSaveModal } from './add-save-modal';
 import { CollectionCard } from './collection-card';
 import { SaveCard } from './save-card';
 
@@ -19,6 +21,7 @@ type DashboardHomeContentProps = {
 
 export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
   const router = useRouter();
+  const [addSaveOpen, setAddSaveOpen] = useState(false);
   const { time, firstName } = getGreeting(user?.name);
   const { data, isLoading, error } = useSWR<DashboardHomeData>(
     '/api/dashboard/home',
@@ -47,10 +50,17 @@ export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
     collections,
     highlights,
     searchSuggestions,
+    usage,
   } = data;
 
   return (
-    <div className="space-y-8 pb-8">
+    <>
+      <AddSaveModal
+        open={addSaveOpen}
+        onOpenChange={setAddSaveOpen}
+        usage={usage}
+      />
+      <div className="space-y-8 pb-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
@@ -69,7 +79,7 @@ export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
           >
             <Bell className="h-4.5 w-4.5" />
           </button>
-          <GradientButton className="gap-2">
+          <GradientButton className="gap-2" onClick={() => setAddSaveOpen(true)}>
             <Plus className="h-4 w-4" />
             Add save
           </GradientButton>
@@ -195,8 +205,11 @@ export function DashboardHomeContent({ user }: DashboardHomeContentProps) {
             DM reels, links, and screenshots to Faye on Instagram.
           </p>
         </div>
-        <GradientButton>Add something new</GradientButton>
+        <GradientButton onClick={() => setAddSaveOpen(true)}>
+          Add something new
+        </GradientButton>
       </div>
     </div>
+    </>
   );
 }

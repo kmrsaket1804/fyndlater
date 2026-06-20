@@ -57,13 +57,13 @@ function formatAction(action: ActivityType): string {
     case ActivityType.UPDATE_ACCOUNT:
       return 'You updated your account';
     case ActivityType.CREATE_TEAM:
-      return 'You created a new team';
+      return 'You set up your account';
     case ActivityType.REMOVE_TEAM_MEMBER:
-      return 'You removed a team member';
+      return 'Account access updated';
     case ActivityType.INVITE_TEAM_MEMBER:
-      return 'You invited a team member';
+      return 'Invitation sent';
     case ActivityType.ACCEPT_INVITATION:
-      return 'You accepted an invitation';
+      return 'Invitation accepted';
     default:
       return 'Unknown action occurred';
   }
