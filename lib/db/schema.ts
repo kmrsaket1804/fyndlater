@@ -8,6 +8,7 @@ import {
   boolean,
   primaryKey,
   uniqueIndex,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -164,6 +165,84 @@ export const retrievals = pgTable('retrievals', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+export const instagramIdentities = pgTable(
+  'instagram_identities',
+  {
+    id: serial('id').primaryKey(),
+    fyndlaterUserId: integer('fyndlater_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    instagramSenderId: varchar('instagram_sender_id', { length: 64 })
+      .notNull(),
+    instagramUsername: varchar('instagram_username', { length: 100 }),
+    status: varchar('status', { length: 20 }).notNull().default('unlinked'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    senderIdx: uniqueIndex('instagram_identities_sender_idx').on(
+      table.instagramSenderId
+    ),
+  })
+);
+
+export const instagramWebhookEvents = pgTable(
+  'instagram_webhook_events',
+  {
+    id: serial('id').primaryKey(),
+    providerEventId: varchar('provider_event_id', { length: 255 }).notNull(),
+    senderIgsid: varchar('sender_igsid', { length: 64 }),
+    eventType: varchar('event_type', { length: 50 }).notNull(),
+    rawPayload: jsonb('raw_payload').notNull(),
+    processedStatus: varchar('processed_status', { length: 20 })
+      .notNull()
+      .default('received'),
+    errorMessage: text('error_message'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    processedAt: timestamp('processed_at'),
+  },
+  (table) => ({
+    providerEventIdx: uniqueIndex('instagram_webhook_events_provider_idx').on(
+      table.providerEventId
+    ),
+  })
+);
+
+export const savedItems = pgTable('saved_items', {
+  id: serial('id').primaryKey(),
+  fyndlaterUserId: integer('fyndlater_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  sourceChannel: varchar('source_channel', { length: 20 })
+    .notNull()
+    .default('instagram'),
+  sourceMessageId: varchar('source_message_id', { length: 255 }),
+  sourceUrl: text('source_url'),
+  contentType: varchar('content_type', { length: 20 }).notNull().default('unknown'),
+  title: varchar('title', { length: 255 }),
+  summary: text('summary'),
+  tags: jsonb('tags').$type<string[]>().default([]),
+  collection: varchar('collection', { length: 100 }),
+  rawText: text('raw_text'),
+  mediaStorageUrl: text('media_storage_url'),
+  embeddingStatus: varchar('embedding_status', { length: 20 })
+    .notNull()
+    .default('pending'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const outboundMessages = pgTable('outbound_messages', {
+  id: serial('id').primaryKey(),
+  channel: varchar('channel', { length: 20 }).notNull().default('instagram'),
+  recipientIgsid: varchar('recipient_igsid', { length: 64 }).notNull(),
+  messageText: text('message_text').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  providerResponse: jsonb('provider_response'),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  sentAt: timestamp('sent_at'),
+});
+
 export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
@@ -302,6 +381,14 @@ export type SavedSearch = typeof savedSearches.$inferSelect;
 export type NewSavedSearch = typeof savedSearches.$inferInsert;
 export type Retrieval = typeof retrievals.$inferSelect;
 export type NewRetrieval = typeof retrievals.$inferInsert;
+export type InstagramIdentity = typeof instagramIdentities.$inferSelect;
+export type NewInstagramIdentity = typeof instagramIdentities.$inferInsert;
+export type InstagramWebhookEvent = typeof instagramWebhookEvents.$inferSelect;
+export type NewInstagramWebhookEvent = typeof instagramWebhookEvents.$inferInsert;
+export type SavedItem = typeof savedItems.$inferSelect;
+export type NewSavedItem = typeof savedItems.$inferInsert;
+export type OutboundMessage = typeof outboundMessages.$inferSelect;
+export type NewOutboundMessage = typeof outboundMessages.$inferInsert;
 
 export type SaveType = 'reel' | 'post' | 'screenshot' | 'link';
 export type SaveStatus = 'processing' | 'ready' | 'failed';
