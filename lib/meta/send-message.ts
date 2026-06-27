@@ -1,4 +1,4 @@
-import { getGraphApiBaseUrl, getMetaConfig } from './config';
+import { getMetaConfig, getMessagingSendTarget } from './config';
 import {
   createOutboundMessage,
   isSenderRateLimited,
@@ -31,24 +31,27 @@ async function postInstagramMessage(
   text: string
 ): Promise<SendResult> {
   const config = getMetaConfig();
-  const baseUrl = getGraphApiBaseUrl();
-  const messagingId = config.igUserId || config.pageId;
+  const target = getMessagingSendTarget(config);
 
-  if (!messagingId) {
+  if ('error' in target) {
     return {
       success: false,
-      errorMessage: 'IG_USER_ID or PAGE_ID is not configured',
+      errorMessage: target.error,
       permanentFailure: true,
     };
   }
 
-  const url = `${baseUrl}/${messagingId}/messages`;
+  console.info('[meta] Sending Instagram DM', {
+    mode: target.mode,
+    url: target.url.replace(/\/messages$/, '/messages'), // host + path, no token
+    recipientIgsid,
+  });
 
-  const response = await fetch(url, {
+  const response = await fetch(target.url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.pageAccessToken}`,
+      Authorization: `Bearer ${target.accessToken}`,
     },
     body: JSON.stringify({
       recipient: { id: recipientIgsid },
