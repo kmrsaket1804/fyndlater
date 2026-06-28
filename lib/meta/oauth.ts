@@ -1,10 +1,10 @@
 import { getGraphApiBaseUrl } from './config';
 
-// pages_manage_metadata is not valid for this app's Login configuration — webhooks use app secret instead.
+// Only request scopes valid for Messenger API + Instagram (Page-linked).
+// pages_manage_metadata and pages_messaging are not enabled on this app type.
 const META_SCOPES = [
   'pages_show_list',
   'pages_read_engagement',
-  'pages_messaging',
   'instagram_basic',
   'instagram_manage_messages',
 ].join(',');
@@ -33,13 +33,21 @@ export function getMetaAppSecret() {
 }
 
 export function buildMetaOAuthUrl(state = 'faye_setup') {
+  const configId = process.env.META_OAUTH_CONFIG_ID;
+
   const params = new URLSearchParams({
     client_id: getMetaAppId(),
     redirect_uri: getMetaOAuthRedirectUri(),
-    scope: META_SCOPES,
     response_type: 'code',
     state,
   });
+
+  // Prefer Login for Business config when set; otherwise use explicit scopes.
+  if (configId) {
+    params.set('config_id', configId);
+  } else {
+    params.set('scope', META_SCOPES);
+  }
 
   return `https://www.facebook.com/v25.0/dialog/oauth?${params.toString()}`;
 }

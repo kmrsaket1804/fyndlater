@@ -69,6 +69,10 @@ WEBHOOK_VERIFY_TOKEN=fyndlater_faye_meta_webhook_2026`;
     This page contains secrets. Close it after copying values into Vercel.
     Do not share this URL. Rotate tokens if exposed.
   </div>
+  <p style="margin-top:24px;color:#555;font-size:14px">
+    If OAuth fails with invalid scopes, use Meta App Dashboard → Messenger → Instagram settings
+    to generate tokens, or set <code>META_OAUTH_CONFIG_ID</code> in Vercel (Facebook Login for Business).
+  </p>
 </body>
 </html>`;
 
