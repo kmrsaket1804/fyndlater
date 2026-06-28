@@ -19,6 +19,7 @@ function renderSetupPage(values: {
 META_APP_SECRET=<set in Vercel — do not paste here>
 META_WEBHOOK_APP_SECRET=<same as META_APP_SECRET>
 META_GRAPH_API_VERSION=v25.0
+META_MESSAGING_API=facebook
 PAGE_ID=${values.pageId}
 PAGE_ACCESS_TOKEN=${values.pageAccessToken}
 IG_USER_ID=${values.igUserId}

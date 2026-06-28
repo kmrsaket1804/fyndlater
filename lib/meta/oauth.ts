@@ -1,9 +1,10 @@
 import { getGraphApiBaseUrl } from './config';
 
+// pages_manage_metadata is not valid for this app's Login configuration — webhooks use app secret instead.
 const META_SCOPES = [
   'pages_show_list',
   'pages_read_engagement',
-  'pages_manage_metadata',
+  'pages_messaging',
   'instagram_basic',
   'instagram_manage_messages',
 ].join(',');

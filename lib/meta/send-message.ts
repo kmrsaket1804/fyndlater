@@ -55,6 +55,7 @@ async function postInstagramMessage(
     },
     body: JSON.stringify({
       recipient: { id: recipientIgsid },
+      messaging_type: 'RESPONSE',
       message: { text: truncateMessage(text) },
     }),
   });
