@@ -1,4 +1,4 @@
-import { after, NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { isMetaConfigured } from '@/lib/meta/config';
 import { handleMetaWebhookPayload } from '@/lib/meta/handle-webhook';
 import {
@@ -8,6 +8,8 @@ import {
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Meta allows ~20s; process inline so DM send completes before the function exits.
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
   if (!isMetaConfigured()) {
@@ -51,16 +53,14 @@ export async function POST(request: NextRequest) {
     return new NextResponse('Bad Request', { status: 400 });
   }
 
-  after(async () => {
-    try {
-      await handleMetaWebhookPayload(payload);
-    } catch (error) {
-      console.error(
-        '[meta] Async webhook processing failed:',
-        error instanceof Error ? error.message : error
-      );
-    }
-  });
+  try {
+    await handleMetaWebhookPayload(payload);
+  } catch (error) {
+    console.error(
+      '[meta] Webhook processing failed:',
+      error instanceof Error ? error.message : error
+    );
+  }
 
   return new NextResponse('EVENT_RECEIVED', { status: 200 });
 }

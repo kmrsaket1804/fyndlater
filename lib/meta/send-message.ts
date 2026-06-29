@@ -1,4 +1,4 @@
-import { getMetaConfig, getMessagingSendTarget } from './config';
+import { getMetaConfig, getMessagingSendTarget, tokenHint } from './config';
 import {
   createOutboundMessage,
   isSenderRateLimited,
@@ -43,8 +43,10 @@ async function postInstagramMessage(
 
   console.info('[meta] Sending Instagram DM', {
     mode: target.mode,
-    url: target.url.replace(/\/messages$/, '/messages'), // host + path, no token
+    url: target.url,
     recipientIgsid,
+    tokenHint: tokenHint(target.accessToken),
+    attemptTextLength: truncateMessage(text).length,
   });
 
   const response = await fetch(target.url, {
@@ -70,6 +72,13 @@ async function postInstagramMessage(
         ? JSON.stringify((providerResponse as { error: unknown }).error)
         : `Instagram API error (${response.status})`;
 
+    console.error('[meta] Instagram DM API error', {
+      status: response.status,
+      recipientIgsid,
+      error: errorMessage,
+      tokenHint: tokenHint(target.accessToken),
+    });
+
     return {
       success: false,
       providerResponse,
@@ -77,6 +86,16 @@ async function postInstagramMessage(
       permanentFailure: !RETRYABLE_STATUS.has(response.status),
     };
   }
+
+  console.info('[meta] Instagram DM sent', {
+    recipientIgsid,
+    messageId:
+      typeof providerResponse === 'object' &&
+      providerResponse !== null &&
+      'message_id' in providerResponse
+        ? (providerResponse as { message_id: string }).message_id
+        : null,
+  });
 
   return { success: true, providerResponse };
 }

@@ -101,6 +101,7 @@ export async function isSenderRateLimited(senderIgsid: string) {
     .where(
       and(
         eq(outboundMessages.recipientIgsid, senderIgsid),
+        eq(outboundMessages.status, 'sent'),
         gte(outboundMessages.createdAt, oneMinuteAgo)
       )
     );
@@ -111,6 +112,7 @@ export async function isSenderRateLimited(senderIgsid: string) {
     .where(
       and(
         eq(outboundMessages.recipientIgsid, senderIgsid),
+        eq(outboundMessages.status, 'sent'),
         gte(outboundMessages.createdAt, oneHourAgo)
       )
     );

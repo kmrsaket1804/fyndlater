@@ -9,31 +9,51 @@ export type MetaConfig = {
   webhookAppSecret: string;
 };
 
+/** Trim whitespace/quotes Vercel sometimes adds when pasting env vars. */
+export function sanitizeMetaEnvValue(value: string | undefined) {
+  if (!value) {
+    return '';
+  }
+  return value.trim().replace(/^["']|["']$/g, '');
+}
+
+export function tokenHint(token: string) {
+  if (token.length <= 12) {
+    return `[len=${token.length}]`;
+  }
+  return `${token.slice(0, 6)}…${token.slice(-4)} [len=${token.length}]`;
+}
+
 export function isMetaConfigured() {
   return Boolean(
-    process.env.PAGE_ACCESS_TOKEN &&
-      process.env.WEBHOOK_VERIFY_TOKEN &&
-      (process.env.META_WEBHOOK_APP_SECRET || process.env.META_APP_SECRET)
+    sanitizeMetaEnvValue(process.env.PAGE_ACCESS_TOKEN) &&
+      sanitizeMetaEnvValue(process.env.WEBHOOK_VERIFY_TOKEN) &&
+      (sanitizeMetaEnvValue(process.env.META_WEBHOOK_APP_SECRET) ||
+        sanitizeMetaEnvValue(process.env.META_APP_SECRET))
   );
 }
 
 export function getMetaConfig(): MetaConfig {
-  const pageAccessToken = process.env.PAGE_ACCESS_TOKEN;
-  const webhookVerifyToken = process.env.WEBHOOK_VERIFY_TOKEN;
+  const pageAccessToken = sanitizeMetaEnvValue(process.env.PAGE_ACCESS_TOKEN);
+  const webhookVerifyToken = sanitizeMetaEnvValue(
+    process.env.WEBHOOK_VERIFY_TOKEN
+  );
   const webhookAppSecret =
-    process.env.META_WEBHOOK_APP_SECRET || process.env.META_APP_SECRET;
+    sanitizeMetaEnvValue(process.env.META_WEBHOOK_APP_SECRET) ||
+    sanitizeMetaEnvValue(process.env.META_APP_SECRET);
 
   if (!pageAccessToken || !webhookVerifyToken || !webhookAppSecret) {
     throw new Error('Meta Instagram webhook is not fully configured');
   }
 
   return {
-    appId: process.env.META_APP_ID || '',
-    appSecret: process.env.META_APP_SECRET || '',
-    graphApiVersion: process.env.META_GRAPH_API_VERSION || 'v25.0',
-    pageId: process.env.PAGE_ID || '',
+    appId: sanitizeMetaEnvValue(process.env.META_APP_ID),
+    appSecret: sanitizeMetaEnvValue(process.env.META_APP_SECRET),
+    graphApiVersion:
+      sanitizeMetaEnvValue(process.env.META_GRAPH_API_VERSION) || 'v25.0',
+    pageId: sanitizeMetaEnvValue(process.env.PAGE_ID),
     pageAccessToken,
-    igUserId: process.env.IG_USER_ID || '',
+    igUserId: sanitizeMetaEnvValue(process.env.IG_USER_ID),
     webhookVerifyToken,
     webhookAppSecret,
   };
@@ -50,7 +70,7 @@ export function getInstagramGraphApiBaseUrl() {
 }
 
 export function getInstagramAccessToken() {
-  return process.env.INSTAGRAM_ACCESS_TOKEN || '';
+  return sanitizeMetaEnvValue(process.env.INSTAGRAM_ACCESS_TOKEN);
 }
 
 export type MessagingSendTarget = {
