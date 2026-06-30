@@ -243,6 +243,15 @@ export const outboundMessages = pgTable('outbound_messages', {
   sentAt: timestamp('sent_at'),
 });
 
+/** Global cache of processed Instagram reels keyed by shortcode (shared across users). */
+export const reelProcessingCache = pgTable('reel_processing_cache', {
+  shortcode: varchar('shortcode', { length: 64 }).primaryKey(),
+  reelUrl: text('reel_url').notNull(),
+  record: jsonb('record').notNull().$type<Record<string, unknown>>(),
+  processedAt: timestamp('processed_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
@@ -389,6 +398,8 @@ export type SavedItem = typeof savedItems.$inferSelect;
 export type NewSavedItem = typeof savedItems.$inferInsert;
 export type OutboundMessage = typeof outboundMessages.$inferSelect;
 export type NewOutboundMessage = typeof outboundMessages.$inferInsert;
+export type ReelProcessingCache = typeof reelProcessingCache.$inferSelect;
+export type NewReelProcessingCache = typeof reelProcessingCache.$inferInsert;
 
 export type SaveType = 'reel' | 'post' | 'screenshot' | 'link';
 export type SaveStatus = 'processing' | 'ready' | 'failed';

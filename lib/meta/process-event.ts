@@ -3,13 +3,29 @@ import {
   markWebhookEventProcessed,
 } from './queries';
 import { routeInstagramIntent } from './router';
+import { saveInstagramContent } from './save-from-instagram';
 import { sendInstagramMessage } from './send-message';
 import { META_REPLY, type NormalizedInstagramEvent } from './types';
 
 function replyForIntent(
   intent: ReturnType<typeof routeInstagramIntent>,
-  isLinked: boolean
+  isLinked: boolean,
+  saveResult?: Awaited<ReturnType<typeof saveInstagramContent>> | null
 ) {
+  if (saveResult?.status === 'quota_exceeded') {
+    return "You've reached your monthly save limit ✨ Upgrade to Pro on fyndlater.com for more.";
+  }
+
+  if (saveResult?.status === 'saved' && saveResult.reelUrl) {
+    if (saveResult.processing === 'cache') {
+      return 'Saved ✨ I already analyzed this reel — added to your library.';
+    }
+    if (saveResult.processing === 'queued') {
+      return "Saved ✨ I'm analyzing this reel for you.";
+    }
+    return META_REPLY.organizing;
+  }
+
   switch (intent) {
     case 'ACCOUNT_LINK':
       return isLinked
@@ -33,14 +49,27 @@ export async function processInstagramEvent(event: NormalizedInstagramEvent) {
       identity?.status === 'linked' && Boolean(identity.fyndlaterUserId);
 
     const intent = routeInstagramIntent(event.text);
-    const replyText = replyForIntent(intent, isLinked);
 
-    // Phase 1: acknowledge all inbound message types with a safe default reply.
     if (event.message_type === 'unknown' && !event.text) {
       await markWebhookEventProcessed(event.raw_payload_id, 'ignored');
       return;
     }
 
+    let saveResult: Awaited<ReturnType<typeof saveInstagramContent>> | null =
+      null;
+
+    if (
+      isLinked &&
+      identity?.fyndlaterUserId &&
+      (intent === 'SAVE_CONTENT' || intent === 'UNKNOWN')
+    ) {
+      saveResult = await saveInstagramContent({
+        event,
+        fyndlaterUserId: identity.fyndlaterUserId,
+      });
+    }
+
+    const replyText = replyForIntent(intent, isLinked, saveResult);
     const result = await sendInstagramMessage(event.sender_igsid, replyText);
 
     if (!result.success && !result.rateLimited) {
@@ -48,6 +77,15 @@ export async function processInstagramEvent(event: NormalizedInstagramEvent) {
         event.raw_payload_id,
         'failed',
         'Failed to send Instagram reply'
+      );
+      return;
+    }
+
+    if (saveResult?.status === 'error') {
+      await markWebhookEventProcessed(
+        event.raw_payload_id,
+        'failed',
+        saveResult.message
       );
       return;
     }

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "app/api/queues/process-reel/route.ts": {
+      "maxDuration": 300,
+      "memory": 3009,
+      "experimentalTriggers": [
+        {
+          "type": "queue/v2beta",
+          "topic": "reel-jobs"
+        }
+      ]
+    },
+    "app/api/reels/route.ts": {
+      "maxDuration": 30
+    }
+  }
+}
