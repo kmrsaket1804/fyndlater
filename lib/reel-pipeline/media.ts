@@ -1,4 +1,5 @@
 import { createWriteStream } from 'node:fs';
+import { accessSync, constants } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -7,9 +8,24 @@ import ffmpegStatic from 'ffmpeg-static';
 import { ensureDir, execFileAsync } from './utils';
 
 function getFfmpegPath(): string {
-  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
-  if (ffmpegStatic) return ffmpegStatic;
-  return 'ffmpeg';
+  const candidates = [
+    process.env.FFMPEG_PATH,
+    typeof ffmpegStatic === 'string' ? ffmpegStatic : null,
+    'ffmpeg',
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidates) {
+    try {
+      accessSync(candidate, constants.X_OK);
+      return candidate;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  throw new Error(
+    'ffmpeg binary not found. The ffmpeg-static install step may have failed during deployment.'
+  );
 }
 
 export async function downloadFile(url: string, outputPath: string) {
