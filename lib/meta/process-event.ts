@@ -2,6 +2,11 @@ import {
   getInstagramIdentity,
   markWebhookEventProcessed,
 } from './queries';
+import {
+  connectCodeReply,
+  extractConnectCode,
+  redeemConnectCode,
+} from '@/lib/instagram/connect';
 import { routeInstagramIntent } from './router';
 import { saveInstagramContent } from './save-from-instagram';
 import { sendInstagramMessage } from './send-message';
@@ -52,6 +57,28 @@ export async function processInstagramEvent(event: NormalizedInstagramEvent) {
 
     if (event.message_type === 'unknown' && !event.text) {
       await markWebhookEventProcessed(event.raw_payload_id, 'ignored');
+      return;
+    }
+
+    const connectCode = extractConnectCode(event.text);
+    if (connectCode) {
+      const redeemResult = await redeemConnectCode(
+        connectCode,
+        event.sender_igsid
+      );
+      const replyText = connectCodeReply(redeemResult);
+      const result = await sendInstagramMessage(event.sender_igsid, replyText);
+
+      if (!result.success && !result.rateLimited) {
+        await markWebhookEventProcessed(
+          event.raw_payload_id,
+          'failed',
+          'Failed to send Instagram reply'
+        );
+        return;
+      }
+
+      await markWebhookEventProcessed(event.raw_payload_id, 'processed');
       return;
     }
 

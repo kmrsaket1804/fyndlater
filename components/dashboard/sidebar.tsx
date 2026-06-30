@@ -30,7 +30,12 @@ const navItems = [
     href: '/dashboard/general',
     icon: Settings,
     label: 'Settings',
-    match: ['/dashboard/general', '/dashboard/security', '/dashboard/activity'],
+    match: [
+      '/dashboard/general',
+      '/dashboard/connect',
+      '/dashboard/security',
+      '/dashboard/activity',
+    ],
   },
 ];
 

@@ -186,6 +186,24 @@ export const instagramIdentities = pgTable(
   })
 );
 
+export const instagramConnectCodes = pgTable(
+  'instagram_connect_codes',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    code: varchar('code', { length: 12 }).notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    usedAt: timestamp('used_at'),
+    linkedSenderId: varchar('linked_sender_id', { length: 64 }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    codeIdx: uniqueIndex('instagram_connect_codes_code_idx').on(table.code),
+  })
+);
+
 export const instagramWebhookEvents = pgTable(
   'instagram_webhook_events',
   {
@@ -392,6 +410,8 @@ export type Retrieval = typeof retrievals.$inferSelect;
 export type NewRetrieval = typeof retrievals.$inferInsert;
 export type InstagramIdentity = typeof instagramIdentities.$inferSelect;
 export type NewInstagramIdentity = typeof instagramIdentities.$inferInsert;
+export type InstagramConnectCode = typeof instagramConnectCodes.$inferSelect;
+export type NewInstagramConnectCode = typeof instagramConnectCodes.$inferInsert;
 export type InstagramWebhookEvent = typeof instagramWebhookEvents.$inferSelect;
 export type NewInstagramWebhookEvent = typeof instagramWebhookEvents.$inferInsert;
 export type SavedItem = typeof savedItems.$inferSelect;

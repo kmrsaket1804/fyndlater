@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 
 const links = [
   { href: '/dashboard/general', label: 'General' },
+  { href: '/dashboard/connect', label: 'Instagram' },
   { href: '/dashboard/security', label: 'Security' },
   { href: '/dashboard/activity', label: 'Activity' },
 ];
