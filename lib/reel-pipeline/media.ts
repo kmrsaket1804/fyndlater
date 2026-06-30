@@ -7,9 +7,15 @@ import path from 'node:path';
 import ffmpegStatic from 'ffmpeg-static';
 import { ensureDir, execFileAsync } from './utils';
 
+const bundledFfmpegPath = path.join(
+  process.cwd(),
+  'lib/reel-pipeline/bin/ffmpeg'
+);
+
 function getFfmpegPath(): string {
   const candidates = [
     process.env.FFMPEG_PATH,
+    bundledFfmpegPath,
     typeof ffmpegStatic === 'string' ? ffmpegStatic : null,
     'ffmpeg',
   ].filter(Boolean) as string[];
