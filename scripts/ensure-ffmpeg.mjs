@@ -9,9 +9,9 @@ const bundledDir = path.join(process.cwd(), 'lib/reel-pipeline/bin');
 const bundledBinary = path.join(bundledDir, 'ffmpeg');
 
 function getTargetPlatformArch() {
-  // Vercel queue consumer runs on linux x86_64 — download matching ffmpeg.
+  // Vercel Functions default to linux arm64 — download matching ffmpeg.
   if (process.env.VERCEL) {
-    return { platform: 'linux', arch: 'x64' };
+    return { platform: 'linux', arch: 'arm64' };
   }
 
   return {
