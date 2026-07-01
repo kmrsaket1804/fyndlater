@@ -1,37 +1,47 @@
 import { createWriteStream } from 'node:fs';
-import { accessSync, constants } from 'node:fs';
+import {
+  accessSync,
+  chmodSync,
+  constants,
+  copyFileSync,
+  existsSync,
+} from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
-import ffmpegStatic from 'ffmpeg-static';
 import { ensureDir, execFileAsync } from './utils';
 
-const bundledFfmpegPath = path.join(
-  process.cwd(),
-  'lib/reel-pipeline/bin/ffmpeg'
-);
+const BUNDLED_FFMPEG_REL = 'lib/reel-pipeline/bin/ffmpeg';
+const RUNTIME_FFMPEG = '/tmp/fyndlater-ffmpeg';
+
+let cachedFfmpegPath: string | null = null;
 
 function getFfmpegPath(): string {
-  const candidates = [
-    process.env.FFMPEG_PATH,
-    bundledFfmpegPath,
-    typeof ffmpegStatic === 'string' ? ffmpegStatic : null,
-    'ffmpeg',
-  ].filter(Boolean) as string[];
-
-  for (const candidate of candidates) {
-    try {
-      accessSync(candidate, constants.X_OK);
-      return candidate;
-    } catch {
-      // try next candidate
-    }
+  if (cachedFfmpegPath) {
+    return cachedFfmpegPath;
   }
 
-  throw new Error(
-    'ffmpeg binary not found. The ffmpeg-static install step may have failed during deployment.'
-  );
+  if (process.env.FFMPEG_PATH) {
+    accessSync(process.env.FFMPEG_PATH, constants.F_OK);
+    cachedFfmpegPath = process.env.FFMPEG_PATH;
+    return cachedFfmpegPath;
+  }
+
+  const bundled = path.join(process.cwd(), BUNDLED_FFMPEG_REL);
+  if (!existsSync(bundled)) {
+    throw new Error(
+      `Bundled ffmpeg missing at ${bundled}. Run scripts/ensure-ffmpeg.mjs before build.`
+    );
+  }
+
+  copyFileSync(bundled, RUNTIME_FFMPEG);
+  chmodSync(RUNTIME_FFMPEG, 0o755);
+  accessSync(RUNTIME_FFMPEG, constants.X_OK);
+
+  console.info('[reel-pipeline] Using ffmpeg at', RUNTIME_FFMPEG);
+  cachedFfmpegPath = RUNTIME_FFMPEG;
+  return cachedFfmpegPath;
 }
 
 export async function downloadFile(url: string, outputPath: string) {
