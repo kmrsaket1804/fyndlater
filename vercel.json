@@ -3,6 +3,7 @@
   "functions": {
     "app/api/queues/process-reel/route.ts": {
       "maxDuration": 300,
+      "architecture": "x86_64",
       "experimentalTriggers": [
         {
           "type": "queue/v2beta",
