@@ -1,4 +1,4 @@
-import type { NormalizedInstagramEvent } from './types';
+import type { InstagramAttachment, NormalizedInstagramEvent } from './types';
 
 const INSTAGRAM_POST_URL_REGEX =
   /https?:\/\/(?:www\.)?instagram\.com\/(?:reel|p|tv)\/[A-Za-z0-9_-]+\/?/gi;
@@ -6,7 +6,12 @@ const INSTAGRAM_POST_URL_REGEX =
 const INSTAGRAM_SHORTCODE_REGEX =
   /instagram\.com\/(?:reel|p|tv)\/([A-Za-z0-9_-]+)/i;
 
-function postUrlFromShortcode(shortcode: string, kind: 'reel' | 'p' | 'tv' = 'p') {
+const LOOKASIDE_ASSET_REGEX = /[?&]asset_id=(\d+)/i;
+
+function postUrlFromShortcode(
+  shortcode: string,
+  kind: 'reel' | 'p' | 'tv' = 'p'
+) {
   return `https://www.instagram.com/${kind}/${shortcode}/`;
 }
 
@@ -14,11 +19,35 @@ function normalizeExtractedUrl(url: string) {
   return url.replace(/\?.*$/, '').replace(/\/$/, '') + '/';
 }
 
+function looksLikeInstagramShortcode(value: string) {
+  return (
+    /^[A-Za-z0-9_-]{5,15}$/.test(value) &&
+    !/^\d+$/.test(value) &&
+    /[A-Za-z]/.test(value)
+  );
+}
+
 function extractFromText(text: string | null): string | null {
   if (!text) return null;
   const match = text.match(INSTAGRAM_POST_URL_REGEX);
   if (!match?.[0]) return null;
   return normalizeExtractedUrl(match[0]);
+}
+
+function isInstagramPermalink(url: string) {
+  return INSTAGRAM_SHORTCODE_REGEX.test(url);
+}
+
+function mediaIdFromUrl(url: string): string | undefined {
+  const assetMatch = url.match(LOOKASIDE_ASSET_REGEX);
+  if (assetMatch?.[1]) {
+    return assetMatch[1];
+  }
+  return undefined;
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
 function extractFromPayload(payload: Record<string, unknown> | undefined) {
@@ -31,24 +60,23 @@ function extractFromPayload(payload: Record<string, unknown> | undefined) {
     payload.share_url,
     payload.reel_url,
     payload.media_url,
+    payload.href,
   ];
 
   for (const candidate of urlCandidates) {
-    if (typeof candidate === 'string' && INSTAGRAM_SHORTCODE_REGEX.test(candidate)) {
-      return normalizeExtractedUrl(candidate);
+    const url = readString(candidate);
+    if (!url) continue;
+
+    if (isInstagramPermalink(url)) {
+      return normalizeExtractedUrl(url);
     }
   }
 
   const shortcode =
-    (typeof payload.reel_video_id === 'string' && payload.reel_video_id) ||
-    (typeof payload.shortcode === 'string' && payload.shortcode) ||
-    (typeof payload.id === 'string' && payload.id);
+    readString(payload.shortcode) ?? readString(payload.short_code);
 
-  if (shortcode && /^[A-Za-z0-9_-]+$/.test(shortcode)) {
-    const productType =
-      typeof payload.product_type === 'string'
-        ? payload.product_type.toLowerCase()
-        : '';
+  if (shortcode && looksLikeInstagramShortcode(shortcode)) {
+    const productType = readString(payload.product_type)?.toLowerCase() ?? '';
     const kind =
       productType.includes('reel') || productType.includes('clip')
         ? 'reel'
@@ -56,10 +84,46 @@ function extractFromPayload(payload: Record<string, unknown> | undefined) {
     return postUrlFromShortcode(shortcode, kind);
   }
 
+  const reelVideoId = readString(payload.reel_video_id);
+  if (reelVideoId && looksLikeInstagramShortcode(reelVideoId)) {
+    return postUrlFromShortcode(reelVideoId, 'reel');
+  }
+
   return null;
 }
 
-/** Extract an Instagram post URL (/p/, /reel/, /tv/) from DM text or attachments. */
+function extractMediaIdFromAttachment(
+  attachment: InstagramAttachment
+): string | undefined {
+  const payload = attachment.payload;
+  if (!payload) {
+    return attachment.url ? mediaIdFromUrl(attachment.url) : undefined;
+  }
+
+  const idCandidates = [
+    payload.id,
+    payload.ig_post_media_id,
+    payload.media_id,
+    payload.asset_id,
+    payload.reel_video_id,
+  ];
+
+  for (const candidate of idCandidates) {
+    const value = readString(candidate);
+    if (value && /^\d+$/.test(value)) {
+      return value;
+    }
+  }
+
+  const url = readString(payload.url) ?? readString(attachment.url);
+  if (url) {
+    return mediaIdFromUrl(url);
+  }
+
+  return undefined;
+}
+
+/** Extract a direct instagram.com post URL when present in text or attachments. */
 export function extractInstagramPostUrlFromEvent(
   event: NormalizedInstagramEvent
 ): string | null {
@@ -67,13 +131,47 @@ export function extractInstagramPostUrlFromEvent(
   if (fromText) return fromText;
 
   for (const attachment of event.attachments) {
-    if (attachment.url) {
-      const fromAttachmentUrl = extractFromText(attachment.url);
-      if (fromAttachmentUrl) return fromAttachmentUrl;
+    if (attachment.url && isInstagramPermalink(attachment.url)) {
+      return normalizeExtractedUrl(attachment.url);
     }
 
     const fromPayload = extractFromPayload(attachment.payload);
     if (fromPayload) return fromPayload;
+
+    if (attachment.url) {
+      const fromAttachmentUrl = extractFromText(attachment.url);
+      if (fromAttachmentUrl) return fromAttachmentUrl;
+    }
+  }
+
+  return null;
+}
+
+/** Media/asset id for Graph API permalink lookup when no direct URL is available. */
+export function extractMediaReferenceFromEvent(
+  event: NormalizedInstagramEvent
+): string | null {
+  for (const attachment of event.attachments) {
+    const type = attachment.type.toLowerCase();
+    if (
+      ![
+        'share',
+        'ig_post',
+        'post',
+        'ig_reel',
+        'reel',
+        'story_mention',
+        'template',
+        'fallback',
+      ].includes(type)
+    ) {
+      continue;
+    }
+
+    const mediaId = extractMediaIdFromAttachment(attachment);
+    if (mediaId) {
+      return mediaId;
+    }
   }
 
   return null;
@@ -91,6 +189,10 @@ export function isSaveableInstagramContent(event: NormalizedInstagramEvent) {
     return true;
   }
 
+  if (extractMediaReferenceFromEvent(event)) {
+    return true;
+  }
+
   if (event.message_type === 'shared_post') {
     return true;
   }
@@ -100,4 +202,24 @@ export function isSaveableInstagramContent(event: NormalizedInstagramEvent) {
   }
 
   return ['image', 'video', 'audio'].includes(event.message_type);
+}
+
+export function hasProcessableInstagramAttachments(
+  event: NormalizedInstagramEvent
+) {
+  return event.attachments.some((attachment) => {
+    const type = attachment.type.toLowerCase();
+    return [
+      'share',
+      'ig_post',
+      'post',
+      'ig_reel',
+      'reel',
+      'story_mention',
+      'image',
+      'video',
+      'template',
+      'fallback',
+    ].includes(type);
+  });
 }

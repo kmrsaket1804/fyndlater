@@ -37,7 +37,10 @@ function mapAttachmentType(type?: string): InstagramMessageType {
     case 'audio':
       return 'audio';
     case 'share':
+    case 'ig_post':
+    case 'post':
     case 'ig_reel':
+    case 'reel':
     case 'story_mention':
       return 'shared_post';
     default:

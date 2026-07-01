@@ -11,6 +11,7 @@ import {
 import {
   extractInstagramPostUrlFromEvent,
 } from './extract-reel-url';
+import { resolveInstagramPostUrlFromEvent } from './resolve-post-url';
 import { notifyPostReady } from './reel-notifications';
 import {
   inferUrlPipelineKind,
@@ -68,10 +69,20 @@ export async function saveInstagramContent(params: {
     return { status: 'error', message: 'Team not found' };
   }
 
-  const postUrl = extractInstagramPostUrlFromEvent(event);
+  const postUrl = await resolveInstagramPostUrlFromEvent(event);
   const text = event.text?.trim() ?? null;
 
   if (!postUrl && !text) {
+    if (event.attachments.length) {
+      console.warn('[meta] Could not resolve shared post URL from attachments', {
+        messageId: event.message_id,
+        attachmentTypes: event.attachments.map((attachment) => attachment.type),
+      });
+      return {
+        status: 'error',
+        message: 'Could not resolve shared post URL from Instagram attachment',
+      };
+    }
     return { status: 'ignored' };
   }
 

@@ -52,6 +52,7 @@ export async function handleMetaWebhookPayload(payload: unknown) {
           sender: event.sender_igsid,
           messageId: event.message_id,
           type: event.message_type,
+          attachmentTypes: event.attachments.map((attachment) => attachment.type),
           textPreview: event.text?.slice(0, 80) ?? null,
         });
 

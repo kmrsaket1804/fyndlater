@@ -7,7 +7,11 @@ import {
   extractConnectCode,
   redeemConnectCode,
 } from '@/lib/instagram/connect';
-import { extractInstagramPostUrlFromEvent } from './extract-reel-url';
+import {
+  extractInstagramPostUrlFromEvent,
+  hasProcessableInstagramAttachments,
+  isSaveableInstagramContent,
+} from './extract-reel-url';
 import {
   extractShortcode,
   inferUrlPipelineKind,
@@ -46,6 +50,10 @@ function replyForIntent(
 ) {
   if (saveResult?.status === 'quota_exceeded') {
     return "You've reached your monthly save limit ✨ Upgrade to Pro on fyndlater.com for more.";
+  }
+
+  if (saveResult?.status === 'error' && saveResult.message.includes('shared post URL')) {
+    return "I couldn't read that shared post link ✨ Try pasting the instagram.com/p/… URL directly.";
   }
 
   if (saveResult?.status === 'saved' && saveResult.postUrl) {
@@ -93,7 +101,10 @@ export async function processInstagramEvent(event: NormalizedInstagramEvent) {
 
     const intent = routeInstagramIntent(event.text);
 
-    if (event.message_type === 'unknown' && !event.text) {
+    if (
+      !isSaveableInstagramContent(event) &&
+      !hasProcessableInstagramAttachments(event)
+    ) {
       await markWebhookEventProcessed(event.raw_payload_id, 'ignored');
       return;
     }
