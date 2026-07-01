@@ -9,6 +9,7 @@ import {
   scheduleSaveProcessing,
 } from '@/lib/saves/create-save-for-team';
 import { extractReelUrlFromInstagramEvent } from './extract-reel-url';
+import { notifyReelReady } from './reel-notifications';
 import type { NormalizedInstagramEvent } from './types';
 
 export type InstagramSaveResult =
@@ -20,6 +21,7 @@ export type InstagramSaveResult =
       saveId: number;
       reelUrl: string | null;
       processing: 'cache' | 'queued' | 'skipped' | 'none';
+      skipReply?: boolean;
     };
 
 export async function saveInstagramContent(params: {
@@ -92,8 +94,18 @@ export async function saveInstagramContent(params: {
           sourceUrl: reelUrl,
           savedItemId: savedItem.id,
           instagramMessageId: event.message_id,
+          instagramSenderId: event.sender_igsid,
         })
       : { source: 'skipped' as const };
+
+    if (processing.source === 'cache') {
+      await notifyReelReady({
+        senderIgsid: event.sender_igsid,
+        instagramMessageId: event.message_id,
+        record: processing.record,
+        fromCache: true,
+      });
+    }
 
     console.info('[meta] Saved Instagram content', {
       saveId: save.id,
@@ -113,6 +125,7 @@ export async function saveInstagramContent(params: {
         processing.source === 'skipped'
           ? processing.source
           : 'none',
+      skipReply: processing.source === 'cache',
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Save failed';

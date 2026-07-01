@@ -9,4 +9,5 @@ export type ReelQueueMessage = {
   dedupeKey?: string;
   savedItemId?: number;
   instagramMessageId?: string;
+  instagramSenderId?: string;
 };

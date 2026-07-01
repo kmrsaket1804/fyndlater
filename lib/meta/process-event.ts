@@ -7,10 +7,32 @@ import {
   extractConnectCode,
   redeemConnectCode,
 } from '@/lib/instagram/connect';
+import { extractReelUrlFromInstagramEvent } from './extract-reel-url';
+import { extractShortcode } from '@/lib/reel-pipeline/reel-url';
 import { routeInstagramIntent } from './router';
 import { saveInstagramContent } from './save-from-instagram';
 import { sendInstagramMessage } from './send-message';
 import { META_REPLY, type NormalizedInstagramEvent } from './types';
+
+function messageContextLabel(event: NormalizedInstagramEvent) {
+  const reelUrl = extractReelUrlFromInstagramEvent(event);
+  const shortcode = reelUrl ? extractShortcode(reelUrl) : null;
+
+  if (shortcode) {
+    return `Re: reel /${shortcode}`;
+  }
+
+  if (event.text?.trim()) {
+    const preview = event.text.trim().replace(/\s+/g, ' ');
+    return `Re: ${preview.length > 48 ? `${preview.slice(0, 47)}…` : preview}`;
+  }
+
+  if (event.message_type === 'shared_post') {
+    return 'Re: your shared post';
+  }
+
+  return 'Re: your message';
+}
 
 function replyForIntent(
   intent: ReturnType<typeof routeInstagramIntent>,
@@ -22,11 +44,8 @@ function replyForIntent(
   }
 
   if (saveResult?.status === 'saved' && saveResult.reelUrl) {
-    if (saveResult.processing === 'cache') {
-      return 'Saved ✨ I already analyzed this reel — added to your library.';
-    }
     if (saveResult.processing === 'queued') {
-      return "Saved ✨ I'm analyzing this reel for you.";
+      return "Saved ✨ I'm analyzing this reel for you — I'll reply here when it's ready.";
     }
     return META_REPLY.organizing;
   }
@@ -45,6 +64,16 @@ function replyForIntent(
     default:
       return isLinked ? META_REPLY.organizing : META_REPLY.received;
   }
+}
+
+async function replyToEvent(
+  event: NormalizedInstagramEvent,
+  text: string
+) {
+  return sendInstagramMessage(event.sender_igsid, text, {
+    replyToMessageId: event.message_id,
+    contextLabel: messageContextLabel(event),
+  });
 }
 
 export async function processInstagramEvent(event: NormalizedInstagramEvent) {
@@ -67,7 +96,7 @@ export async function processInstagramEvent(event: NormalizedInstagramEvent) {
         event.sender_igsid
       );
       const replyText = connectCodeReply(redeemResult);
-      const result = await sendInstagramMessage(event.sender_igsid, replyText);
+      const result = await replyToEvent(event, replyText);
 
       if (!result.success && !result.rateLimited) {
         await markWebhookEventProcessed(
@@ -96,16 +125,18 @@ export async function processInstagramEvent(event: NormalizedInstagramEvent) {
       });
     }
 
-    const replyText = replyForIntent(intent, isLinked, saveResult);
-    const result = await sendInstagramMessage(event.sender_igsid, replyText);
+    if (!(saveResult?.status === 'saved' && saveResult.skipReply)) {
+      const replyText = replyForIntent(intent, isLinked, saveResult);
+      const result = await replyToEvent(event, replyText);
 
-    if (!result.success && !result.rateLimited) {
-      await markWebhookEventProcessed(
-        event.raw_payload_id,
-        'failed',
-        'Failed to send Instagram reply'
-      );
-      return;
+      if (!result.success && !result.rateLimited) {
+        await markWebhookEventProcessed(
+          event.raw_payload_id,
+          'failed',
+          'Failed to send Instagram reply'
+        );
+        return;
+      }
     }
 
     if (saveResult?.status === 'error') {

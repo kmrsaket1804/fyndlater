@@ -13,6 +13,7 @@ export async function enqueueReelProcessing(params: {
   userId?: number;
   savedItemId?: number;
   instagramMessageId?: string;
+  instagramSenderId?: string;
 }) {
   if (!isReelPipelineConfigured()) {
     console.warn(
@@ -33,6 +34,7 @@ export async function enqueueReelProcessing(params: {
     dedupeKey,
     savedItemId: params.savedItemId,
     instagramMessageId: params.instagramMessageId,
+    instagramSenderId: params.instagramSenderId,
   };
 
   const idempotencyKey = `save:${params.saveId}:${dedupeKey ?? jobId}`;

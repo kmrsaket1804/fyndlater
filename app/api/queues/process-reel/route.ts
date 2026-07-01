@@ -1,4 +1,5 @@
 import { handleCallback } from '@vercel/queue';
+import { notifyReelFailed, notifyReelReady } from '@/lib/meta/reel-notifications';
 import {
   applyReelResultToSave,
   markSaveReelFailed,
@@ -10,6 +11,19 @@ import { extractShortcode } from '@/lib/reel-pipeline/reel-url';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
+
+async function notifyIfInstagram(message: ReelQueueMessage, record: Parameters<typeof notifyReelReady>[0]['record'], fromCache?: boolean) {
+  if (!message.instagramSenderId) {
+    return;
+  }
+
+  await notifyReelReady({
+    senderIgsid: message.instagramSenderId,
+    instagramMessageId: message.instagramMessageId,
+    record,
+    fromCache,
+  });
+}
 
 export const POST = handleCallback(async (message: ReelQueueMessage) => {
   if (!message?.reelUrl) throw new Error('Queue message missing reelUrl');
@@ -32,6 +46,7 @@ export const POST = handleCallback(async (message: ReelQueueMessage) => {
           saveId: message.saveId,
           shortcode,
         });
+        await notifyIfInstagram(message, cached, true);
         return;
       }
     }
@@ -43,10 +58,21 @@ export const POST = handleCallback(async (message: ReelQueueMessage) => {
       savedItemId: message.savedItemId,
       instagramMessageId: message.instagramMessageId,
     });
+    await notifyIfInstagram(message, record);
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Reel processing failed';
     await markSaveReelFailed(message.saveId, errorMessage);
+
+    if (message.instagramSenderId) {
+      await notifyReelFailed({
+        senderIgsid: message.instagramSenderId,
+        instagramMessageId: message.instagramMessageId,
+        errorMessage,
+        reelUrl: message.reelUrl,
+      });
+    }
+
     throw error;
   }
 });

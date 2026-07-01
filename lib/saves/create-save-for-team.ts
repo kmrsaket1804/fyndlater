@@ -118,6 +118,7 @@ export async function scheduleSaveProcessing(params: {
   sourceUrl: string | null;
   savedItemId?: number;
   instagramMessageId?: string;
+  instagramSenderId?: string;
 }) {
   if (!params.sourceUrl || !isReelUrl(params.sourceUrl)) {
     return { source: 'skipped' as const };
@@ -130,5 +131,6 @@ export async function scheduleSaveProcessing(params: {
     userId: params.userId,
     savedItemId: params.savedItemId,
     instagramMessageId: params.instagramMessageId,
+    instagramSenderId: params.instagramSenderId,
   });
 }

@@ -5,9 +5,10 @@ import { isReelPipelineConfigured } from './config';
 import { getCachedReelRecord } from './cache';
 import { enqueueReelProcessing } from './enqueue';
 import { extractShortcode, normalizeReelUrl } from './reel-url';
+import type { FinalRecord } from './types';
 
 export type ReelScheduleResult =
-  | { source: 'cache'; shortcode: string }
+  | { source: 'cache'; shortcode: string; record: FinalRecord }
   | { source: 'queued'; shortcode?: string; jobId: string; messageId: string }
   | { source: 'skipped' };
 
@@ -19,6 +20,7 @@ export async function scheduleReelProcessing(params: {
   userId?: number;
   savedItemId?: number;
   instagramMessageId?: string;
+  instagramSenderId?: string;
 }): Promise<ReelScheduleResult> {
   if (!isReelPipelineConfigured()) {
     console.warn(
@@ -42,7 +44,7 @@ export async function scheduleReelProcessing(params: {
         saveId: params.saveId,
         shortcode,
       });
-      return { source: 'cache', shortcode };
+      return { source: 'cache', shortcode, record: cached };
     }
   }
 
