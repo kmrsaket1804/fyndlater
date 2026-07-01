@@ -7,19 +7,24 @@ import {
   extractConnectCode,
   redeemConnectCode,
 } from '@/lib/instagram/connect';
-import { extractReelUrlFromInstagramEvent } from './extract-reel-url';
-import { extractShortcode } from '@/lib/reel-pipeline/reel-url';
+import { extractInstagramPostUrlFromEvent } from './extract-reel-url';
+import {
+  extractShortcode,
+  inferUrlPipelineKind,
+} from '@/lib/instagram-pipeline/post-url';
 import { routeInstagramIntent } from './router';
 import { saveInstagramContent } from './save-from-instagram';
 import { sendInstagramMessage } from './send-message';
 import { META_REPLY, type NormalizedInstagramEvent } from './types';
 
 function messageContextLabel(event: NormalizedInstagramEvent) {
-  const reelUrl = extractReelUrlFromInstagramEvent(event);
-  const shortcode = reelUrl ? extractShortcode(reelUrl) : null;
+  const postUrl = extractInstagramPostUrlFromEvent(event);
+  const shortcode = postUrl ? extractShortcode(postUrl) : null;
 
   if (shortcode) {
-    return `Re: reel /${shortcode}`;
+    const kind = postUrl ? inferUrlPipelineKind(postUrl) : null;
+    if (kind === 'reel') return `Re: reel /${shortcode}`;
+    return `Re: post /${shortcode}`;
   }
 
   if (event.text?.trim()) {
@@ -43,8 +48,12 @@ function replyForIntent(
     return "You've reached your monthly save limit ✨ Upgrade to Pro on fyndlater.com for more.";
   }
 
-  if (saveResult?.status === 'saved' && saveResult.reelUrl) {
+  if (saveResult?.status === 'saved' && saveResult.postUrl) {
+    const kind = inferUrlPipelineKind(saveResult.postUrl);
     if (saveResult.processing === 'queued') {
+      if (kind === 'feed_post') {
+        return "Saved ✨ I'm analyzing this post for you — I'll reply here when it's ready.";
+      }
       return "Saved ✨ I'm analyzing this reel for you — I'll reply here when it's ready.";
     }
     return META_REPLY.organizing;

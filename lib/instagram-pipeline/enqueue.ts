@@ -2,12 +2,12 @@ import 'server-only';
 
 import { randomUUID } from 'node:crypto';
 import { send } from '@vercel/queue';
-import { isReelPipelineConfigured } from './config';
-import { REEL_JOBS_TOPIC, type PostQueueMessage } from './queue';
-import { extractShortcode, normalizeReelUrl } from './reel-url';
+import { isReelPipelineConfigured } from '../reel-pipeline/config';
+import { REEL_JOBS_TOPIC, type PostQueueMessage } from '../reel-pipeline/queue';
+import { extractShortcode, normalizeInstagramPostUrl } from './post-url';
 
-export async function enqueueReelProcessing(params: {
-  reelUrl: string;
+export async function enqueuePostProcessing(params: {
+  postUrl: string;
   saveId: number;
   teamId: number;
   userId?: number;
@@ -17,17 +17,17 @@ export async function enqueueReelProcessing(params: {
 }) {
   if (!isReelPipelineConfigured()) {
     console.warn(
-      '[reel-pipeline] Skipping enqueue — APIFY_TOKEN or OPENAI_API_KEY not set'
+      '[instagram-pipeline] Skipping enqueue — APIFY_TOKEN or OPENAI_API_KEY not set'
     );
     return null;
   }
 
-  const reelUrl = normalizeReelUrl(params.reelUrl);
+  const postUrl = normalizeInstagramPostUrl(params.postUrl);
   const jobId = randomUUID();
-  const dedupeKey = extractShortcode(reelUrl);
+  const dedupeKey = extractShortcode(postUrl);
   const message: PostQueueMessage = {
-    postUrl: reelUrl,
-    reelUrl,
+    postUrl,
+    reelUrl: postUrl,
     jobId,
     saveId: params.saveId,
     teamId: params.teamId,
@@ -44,11 +44,12 @@ export async function enqueueReelProcessing(params: {
     idempotencyKey,
   });
 
-  console.info('[reel-pipeline] Enqueued reel job', {
+  console.info('[instagram-pipeline] Enqueued post job', {
     saveId: params.saveId,
     jobId,
     messageId,
     dedupeKey,
+    postUrl,
   });
 
   return { messageId, jobId, dedupeKey };

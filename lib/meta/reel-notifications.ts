@@ -1,5 +1,10 @@
-import type { FinalRecord } from '@/lib/reel-pipeline/types';
-import { extractShortcode } from '@/lib/reel-pipeline/reel-url';
+import type { ProcessedSaveRecord } from '@/lib/instagram-pipeline/router';
+import {
+  isProcessedPostRecord,
+  postKindFromRecord,
+  postUrlFromRecord,
+} from '@/lib/instagram-pipeline/router';
+import { extractShortcode } from '@/lib/instagram-pipeline/post-url';
 import { sendInstagramMessage } from './send-message';
 
 function truncate(text: string, max: number) {
@@ -7,7 +12,7 @@ function truncate(text: string, max: number) {
   return `${text.slice(0, max - 1)}…`;
 }
 
-function titleFromRecord(record: FinalRecord) {
+function titleFromRecord(record: ProcessedSaveRecord) {
   const summary = record.visualAnalysis.summary.trim();
   if (summary) {
     return truncate(summary, 120);
@@ -18,50 +23,84 @@ function titleFromRecord(record: FinalRecord) {
     return truncate(caption, 120);
   }
 
+  const kind = postKindFromRecord(record);
+  if (kind === 'carousel') return 'Your carousel';
+  if (kind === 'image') return 'Your image post';
   return 'Your reel';
 }
 
-function tagsFromRecord(record: FinalRecord) {
+function tagsFromRecord(record: ProcessedSaveRecord) {
   return Array.from(
     new Set(
-      record.visualAnalysis.tags
-        .map((tag) => tag.trim())
-        .filter(Boolean)
+      record.visualAnalysis.tags.map((tag) => tag.trim()).filter(Boolean)
     )
   ).slice(0, 5);
 }
 
-export function formatReelReadyMessage(
-  record: FinalRecord,
+function readyHeader(record: ProcessedSaveRecord, fromCache?: boolean) {
+  const kind = postKindFromRecord(record);
+  if (kind === 'carousel') {
+    const slideCount = isProcessedPostRecord(record)
+      ? record.slides?.length ?? record.metadata.slideCount
+      : undefined;
+    const countLabel = slideCount ? `${slideCount}-slide ` : '';
+    return fromCache
+      ? `Done ✨ I already had this ${countLabel}carousel — added to your library.`
+      : `Done ✨ Your ${countLabel}carousel is saved and analyzed.`;
+  }
+
+  if (kind === 'image') {
+    return fromCache
+      ? 'Done ✨ I already had this image — added to your library.'
+      : 'Done ✨ Your image post is saved and analyzed.';
+  }
+
+  return fromCache
+    ? 'Done ✨ I already had this reel — added to your library.'
+    : 'Done ✨ Your reel is saved and analyzed.';
+}
+
+export function formatPostReadyMessage(
+  record: ProcessedSaveRecord,
   options?: { fromCache?: boolean }
 ) {
   const title = titleFromRecord(record);
   const tags = tagsFromRecord(record);
-  const shortcode = extractShortcode(record.reelUrl);
-  const header = options?.fromCache
-    ? 'Done ✨ I already had this reel — added to your library.'
-    : 'Done ✨ Your reel is saved and analyzed.';
+  const shortcode = extractShortcode(postUrlFromRecord(record));
+  const kind = postKindFromRecord(record);
 
-  const lines = [header, '', `"${title}"`];
+  const lines = [readyHeader(record, options?.fromCache), '', `"${title}"`];
 
   if (tags.length) {
     lines.push('', `Tags: ${tags.join(', ')}`);
   }
 
   if (shortcode) {
-    lines.push('', `Reel: instagram.com/reel/${shortcode}`);
+    const path =
+      kind === 'reel' ? `instagram.com/reel/${shortcode}` : `instagram.com/p/${shortcode}`;
+    lines.push('', `Post: ${path}`);
   }
 
   return truncate(lines.join('\n'), 950);
 }
 
-export function formatReelFailedMessage(errorMessage?: string) {
+export function formatPostFailedMessage(
+  errorMessage?: string,
+  postKind?: 'reel' | 'image' | 'carousel'
+) {
+  const label =
+    postKind === 'carousel'
+      ? 'carousel'
+      : postKind === 'image'
+        ? 'image post'
+        : 'reel';
+
   const detail = errorMessage?.trim()
     ? truncate(errorMessage.trim(), 160)
     : null;
 
   const lines = [
-    "Couldn't finish analyzing this reel ✨",
+    `Couldn't finish analyzing this ${label} ✨`,
     detail ? `\n${detail}` : '',
     '\nTry sending it again in a moment.',
   ];
@@ -69,49 +108,105 @@ export function formatReelFailedMessage(errorMessage?: string) {
   return truncate(lines.join(''), 950);
 }
 
-export function formatReelContextLabel(record: FinalRecord) {
-  const shortcode = extractShortcode(record.reelUrl);
+export function formatPostContextLabel(record: ProcessedSaveRecord) {
+  const shortcode = extractShortcode(postUrlFromRecord(record));
+  const kind = postKindFromRecord(record);
+
   if (shortcode) {
-    return `Re: reel /${shortcode}`;
+    if (kind === 'reel') return `Re: reel /${shortcode}`;
+    if (kind === 'carousel') return `Re: carousel /${shortcode}`;
+    return `Re: post /${shortcode}`;
   }
+
   return `Re: ${titleFromRecord(record)}`;
 }
 
-export async function notifyReelReady(params: {
+export async function notifyPostReady(params: {
   senderIgsid: string;
   instagramMessageId?: string;
-  record: FinalRecord;
+  record: ProcessedSaveRecord;
   fromCache?: boolean;
 }) {
-  const text = formatReelReadyMessage(params.record, {
+  const text = formatPostReadyMessage(params.record, {
     fromCache: params.fromCache,
   });
 
   return sendInstagramMessage(params.senderIgsid, text, {
     replyToMessageId: params.instagramMessageId,
-    contextLabel: formatReelContextLabel(params.record),
+    contextLabel: formatPostContextLabel(params.record),
   });
 }
 
+export async function notifyPostFailed(params: {
+  senderIgsid: string;
+  instagramMessageId?: string;
+  errorMessage?: string;
+  postUrl?: string;
+  postKind?: 'reel' | 'image' | 'carousel';
+}) {
+  const shortcode = params.postUrl
+    ? extractShortcode(params.postUrl)
+    : undefined;
+  const kind = params.postKind ?? 'reel';
+  const contextLabel = shortcode
+    ? kind === 'reel'
+      ? `Re: reel /${shortcode}`
+      : kind === 'carousel'
+        ? `Re: carousel /${shortcode}`
+        : `Re: post /${shortcode}`
+    : kind === 'carousel'
+      ? 'Re: your carousel'
+      : kind === 'image'
+        ? 'Re: your image post'
+        : 'Re: your reel';
+
+  return sendInstagramMessage(
+    params.senderIgsid,
+    formatPostFailedMessage(params.errorMessage, kind),
+    {
+      replyToMessageId: params.instagramMessageId,
+      contextLabel,
+    }
+  );
+}
+
+/** @deprecated Use notifyPostReady */
+export async function notifyReelReady(params: {
+  senderIgsid: string;
+  instagramMessageId?: string;
+  record: ProcessedSaveRecord;
+  fromCache?: boolean;
+}) {
+  return notifyPostReady(params);
+}
+
+/** @deprecated Use notifyPostFailed */
 export async function notifyReelFailed(params: {
   senderIgsid: string;
   instagramMessageId?: string;
   errorMessage?: string;
   reelUrl?: string;
 }) {
-  const shortcode = params.reelUrl
-    ? extractShortcode(params.reelUrl)
-    : undefined;
-  const contextLabel = shortcode
-    ? `Re: reel /${shortcode}`
-    : 'Re: your reel';
+  return notifyPostFailed({
+    ...params,
+    postUrl: params.reelUrl,
+  });
+}
 
-  return sendInstagramMessage(
-    params.senderIgsid,
-    formatReelFailedMessage(params.errorMessage),
-    {
-      replyToMessageId: params.instagramMessageId,
-      contextLabel,
-    }
-  );
+/** @deprecated Use formatPostReadyMessage */
+export function formatReelReadyMessage(
+  record: ProcessedSaveRecord,
+  options?: { fromCache?: boolean }
+) {
+  return formatPostReadyMessage(record, options);
+}
+
+/** @deprecated Use formatPostFailedMessage */
+export function formatReelFailedMessage(errorMessage?: string) {
+  return formatPostFailedMessage(errorMessage, 'reel');
+}
+
+/** @deprecated Use formatPostContextLabel */
+export function formatReelContextLabel(record: ProcessedSaveRecord) {
+  return formatPostContextLabel(record);
 }

@@ -8,8 +8,14 @@ import {
   createSaveForTeam,
   scheduleSaveProcessing,
 } from '@/lib/saves/create-save-for-team';
-import { extractReelUrlFromInstagramEvent } from './extract-reel-url';
-import { notifyReelReady } from './reel-notifications';
+import {
+  extractInstagramPostUrlFromEvent,
+} from './extract-reel-url';
+import { notifyPostReady } from './reel-notifications';
+import {
+  inferUrlPipelineKind,
+  isFeedPostUrl,
+} from '@/lib/instagram-pipeline/post-url';
 import type { NormalizedInstagramEvent } from './types';
 
 export type InstagramSaveResult =
@@ -19,10 +25,27 @@ export type InstagramSaveResult =
   | {
       status: 'saved';
       saveId: number;
-      reelUrl: string | null;
+      postUrl: string | null;
       processing: 'cache' | 'queued' | 'skipped' | 'none';
       skipReply?: boolean;
     };
+
+function titleForPostUrl(postUrl: string) {
+  if (inferUrlPipelineKind(postUrl) === 'reel') {
+    return 'Instagram reel';
+  }
+  return 'Instagram post';
+}
+
+function contentTypeForPostUrl(postUrl: string) {
+  if (inferUrlPipelineKind(postUrl) === 'reel') {
+    return 'reel';
+  }
+  if (isFeedPostUrl(postUrl)) {
+    return 'post';
+  }
+  return 'shared_post';
+}
 
 export async function saveInstagramContent(params: {
   event: NormalizedInstagramEvent;
@@ -45,10 +68,10 @@ export async function saveInstagramContent(params: {
     return { status: 'error', message: 'Team not found' };
   }
 
-  const reelUrl = extractReelUrlFromInstagramEvent(event);
+  const postUrl = extractInstagramPostUrlFromEvent(event);
   const text = event.text?.trim() ?? null;
 
-  if (!reelUrl && !text) {
+  if (!postUrl && !text) {
     return { status: 'ignored' };
   }
 
@@ -58,13 +81,13 @@ export async function saveInstagramContent(params: {
       fyndlaterUserId,
       sourceChannel: 'instagram',
       sourceMessageId: event.message_id,
-      sourceUrl: reelUrl,
-      contentType: reelUrl
-        ? 'reel'
+      sourceUrl: postUrl,
+      contentType: postUrl
+        ? contentTypeForPostUrl(postUrl)
         : event.message_type === 'shared_post'
           ? 'shared_post'
           : 'text',
-      title: reelUrl ? 'Instagram reel' : 'Instagram message',
+      title: postUrl ? titleForPostUrl(postUrl) : 'Instagram message',
       summary: text ?? 'Faye is organizing this save.',
       rawText: text,
       embeddingStatus: 'pending',
@@ -72,12 +95,12 @@ export async function saveInstagramContent(params: {
     .returning();
 
   try {
-    const save = reelUrl
+    const save = postUrl
       ? await createSaveForTeam({
           teamId: team.id,
           userId: fyndlaterUserId,
           planName: team.planName,
-          input: { kind: 'link', url: reelUrl, note: text ?? undefined },
+          input: { kind: 'link', url: postUrl, note: text ?? undefined },
         })
       : await createSaveForTeam({
           teamId: team.id,
@@ -86,12 +109,12 @@ export async function saveInstagramContent(params: {
           input: { kind: 'note', text: text! },
         });
 
-    const processing = reelUrl
+    const processing = postUrl
       ? await scheduleSaveProcessing({
           saveId: save.id,
           teamId: team.id,
           userId: fyndlaterUserId,
-          sourceUrl: reelUrl,
+          sourceUrl: postUrl,
           savedItemId: savedItem.id,
           instagramMessageId: event.message_id,
           instagramSenderId: event.sender_igsid,
@@ -99,7 +122,7 @@ export async function saveInstagramContent(params: {
       : { source: 'skipped' as const };
 
     if (processing.source === 'cache') {
-      await notifyReelReady({
+      await notifyPostReady({
         senderIgsid: event.sender_igsid,
         instagramMessageId: event.message_id,
         record: processing.record,
@@ -110,7 +133,7 @@ export async function saveInstagramContent(params: {
     console.info('[meta] Saved Instagram content', {
       saveId: save.id,
       savedItemId: savedItem.id,
-      reelUrl,
+      postUrl,
       processing: processing.source,
       sender: event.sender_igsid,
     });
@@ -118,7 +141,7 @@ export async function saveInstagramContent(params: {
     return {
       status: 'saved',
       saveId: save.id,
-      reelUrl,
+      postUrl,
       processing:
         processing.source === 'cache' ||
         processing.source === 'queued' ||

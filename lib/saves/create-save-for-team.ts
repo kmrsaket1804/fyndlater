@@ -3,8 +3,8 @@ import { saves } from '@/lib/db/schema';
 import { getUsageSummary } from '@/lib/db/dashboard-queries';
 import { teams } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { scheduleReelProcessing } from '@/lib/reel-pipeline/schedule';
-import { isReelUrl } from '@/lib/reel-pipeline/reel-url';
+import { schedulePostProcessing } from '@/lib/instagram-pipeline/schedule';
+import { isInstagramPostUrl } from '@/lib/instagram-pipeline/post-url';
 import type { CreateSaveInput } from './create-save';
 
 function inferTypeFromUrl(url: string): 'reel' | 'post' | 'link' {
@@ -120,12 +120,12 @@ export async function scheduleSaveProcessing(params: {
   instagramMessageId?: string;
   instagramSenderId?: string;
 }) {
-  if (!params.sourceUrl || !isReelUrl(params.sourceUrl)) {
+  if (!params.sourceUrl || !isInstagramPostUrl(params.sourceUrl)) {
     return { source: 'skipped' as const };
   }
 
-  return scheduleReelProcessing({
-    reelUrl: params.sourceUrl,
+  return schedulePostProcessing({
+    postUrl: params.sourceUrl,
     saveId: params.saveId,
     teamId: params.teamId,
     userId: params.userId,

@@ -108,6 +108,7 @@ export const saves = pgTable('saves', {
   source: varchar('source', { length: 50 }).notNull(),
   sourceUrl: text('source_url'),
   imageUrl: text('image_url'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   status: varchar('status', { length: 20 }).notNull().default('processing'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -243,6 +244,7 @@ export const savedItems = pgTable('saved_items', {
   collection: varchar('collection', { length: 100 }),
   rawText: text('raw_text'),
   mediaStorageUrl: text('media_storage_url'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   embeddingStatus: varchar('embedding_status', { length: 20 })
     .notNull()
     .default('pending'),
