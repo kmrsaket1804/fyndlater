@@ -50,6 +50,13 @@
       "when": 1782300000000,
       "tag": "0006_save_enrichment",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782400000000,
+      "tag": "0007_semantic_retrieval",
+      "breakpoints": true
     }
   ]
 }

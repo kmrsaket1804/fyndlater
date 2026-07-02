@@ -19,6 +19,7 @@ import {
 import { immediateReplyForSave } from './faye-replies';
 import { routeInstagramIntent } from './router';
 import { saveInstagramContent } from './save-from-instagram';
+import { retrieveInstagramContent } from '@/lib/semantic/retrieve-instagram';
 import { sendInstagramMessage } from './send-message';
 import { META_REPLY, type NormalizedInstagramEvent } from './types';
 
@@ -131,8 +132,17 @@ export async function processInstagramEvent(event: NormalizedInstagramEvent) {
 
     let saveResult: Awaited<ReturnType<typeof saveInstagramContent>> | null =
       null;
+    let retrieveReply: string | null = null;
 
-    if (
+    if (isLinked && identity?.fyndlaterUserId && intent === 'RETRIEVE_CONTENT') {
+      const retrieval = await retrieveInstagramContent({
+        fyndlaterUserId: identity.fyndlaterUserId,
+        text: event.text,
+      });
+      if (retrieval.status !== 'ignored') {
+        retrieveReply = retrieval.reply;
+      }
+    } else if (
       isLinked &&
       identity?.fyndlaterUserId &&
       (intent === 'SAVE_CONTENT' || intent === 'UNKNOWN')
@@ -144,7 +154,8 @@ export async function processInstagramEvent(event: NormalizedInstagramEvent) {
     }
 
     if (!(saveResult?.status === 'saved' && saveResult.skipReply)) {
-      const replyText = replyForIntent(intent, isLinked, saveResult);
+      const replyText =
+        retrieveReply ?? replyForIntent(intent, isLinked, saveResult);
       const result = await replyToEvent(event, replyText);
 
       if (!result.success && !result.rateLimited) {

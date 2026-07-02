@@ -117,7 +117,33 @@ export const saves = pgTable('saves', {
   status: varchar('status', { length: 20 }).notNull().default('processing'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at'),
 });
+
+export const canonicalContent = pgTable(
+  'canonical_content',
+  {
+    id: serial('id').primaryKey(),
+    canonicalKey: varchar('canonical_key', { length: 128 }).notNull(),
+    chunkType: varchar('chunk_type', { length: 32 }).notNull().default('document'),
+    chunkIndex: integer('chunk_index'),
+    embeddingVersion: varchar('embedding_version', { length: 32 })
+      .notNull()
+      .default('v1'),
+    searchText: text('search_text').notNull(),
+    qdrantPointId: varchar('qdrant_point_id', { length: 64 }).notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    keyChunkVersionIdx: uniqueIndex('canonical_content_key_chunk_version_idx').on(
+      table.canonicalKey,
+      table.chunkType,
+      table.chunkIndex,
+      table.embeddingVersion
+    ),
+  })
+);
 
 export const saveCollections = pgTable(
   'save_collections',
@@ -257,6 +283,37 @@ export const savedItems = pgTable('saved_items', {
     .default('pending'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+export const saveEmbeddingPoints = pgTable(
+  'save_embedding_points',
+  {
+    id: serial('id').primaryKey(),
+    saveId: integer('save_id')
+      .notNull()
+      .references(() => saves.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    savedItemId: integer('saved_item_id').references(() => savedItems.id, {
+      onDelete: 'set null',
+    }),
+    canonicalKey: varchar('canonical_key', { length: 128 }),
+    qdrantPointId: varchar('qdrant_point_id', { length: 64 }).notNull(),
+    chunkType: varchar('chunk_type', { length: 32 }).notNull().default('document'),
+    chunkIndex: integer('chunk_index'),
+    embeddingVersion: varchar('embedding_version', { length: 32 })
+      .notNull()
+      .default('v1'),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    qdrantPointIdx: uniqueIndex('save_embedding_points_qdrant_point_idx').on(
+      table.qdrantPointId
+    ),
+  })
+);
 
 export const outboundMessages = pgTable('outbound_messages', {
   id: serial('id').primaryKey(),

@@ -2,27 +2,23 @@ import 'server-only';
 
 import path from 'node:path';
 import { processReelJob } from '../reel-pipeline/graph';
-import type { FinalRecord } from '../reel-pipeline/types';
+import type { FinalRecord } from '@/lib/reel-pipeline/types';
 import { ensureDir, writeJson } from '../reel-pipeline/utils';
 import { getRunsDir } from '../reel-pipeline/runs-dir';
 import { detectPostKind } from './apify-post';
 import { processCarouselJob } from './carousel-graph';
 import { processImageJob } from './image-graph';
 import { inferUrlPipelineKind, normalizeInstagramPostUrl } from './post-url';
+import {
+  isProcessedPostRecord,
+  postUrlFromRecord,
+  type ProcessedSaveRecord,
+} from './processed-save';
 import { scrapeInstagramPostViaApify } from './scrape';
 import type { PostKind, ProcessedPostRecord } from './types';
 
-export type ProcessedSaveRecord = FinalRecord | ProcessedPostRecord;
-
-export function isProcessedPostRecord(
-  record: ProcessedSaveRecord
-): record is ProcessedPostRecord {
-  return 'postKind' in record && record.postKind !== undefined;
-}
-
-export function postUrlFromRecord(record: ProcessedSaveRecord): string {
-  return isProcessedPostRecord(record) ? record.postUrl : record.reelUrl;
-}
+export type { ProcessedSaveRecord } from './processed-save';
+export { isProcessedPostRecord, postUrlFromRecord } from './processed-save';
 
 export function postKindFromRecord(record: ProcessedSaveRecord): PostKind {
   if (isProcessedPostRecord(record)) {

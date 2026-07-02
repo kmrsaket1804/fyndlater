@@ -44,8 +44,16 @@ function testReplyCopy() {
     /reading this reel/i
   );
   assert.match(
-    immediateReplyForSave('shared_carousel_preview'),
-    /Send me the post link/i
+    immediateReplyForSave('shared_post_preview'),
+    /captured the visible post/i
+  );
+  assert.match(
+    immediateReplyForSave('shared_post_preview'),
+    /full version/i
+  );
+  assert.doesNotMatch(
+    immediateReplyForSave('shared_post_preview'),
+    /carousel/i
   );
   assert.match(
     immediateReplyForSave('merge_uncertain'),

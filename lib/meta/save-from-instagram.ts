@@ -36,6 +36,7 @@ import {
   isFeedPostUrl,
 } from '@/lib/instagram-pipeline/post-url';
 import type { NormalizedInstagramEvent } from './types';
+import { indexSaveForRetrieval } from '@/lib/semantic/index-save';
 
 export type InstagramSaveResult =
   | { status: 'ignored' }
@@ -417,6 +418,24 @@ export async function saveInstagramContent(params: {
           })
         : { source: 'skipped' as const };
 
+    if (processing.source === 'skipped' && text?.trim()) {
+      try {
+        await indexSaveForRetrieval({
+          saveId: save.id,
+          userId: fyndlaterUserId,
+          savedItemId: savedItem.id,
+          noteText: text.trim(),
+          title: save.title,
+          summary: save.description,
+        });
+      } catch (error) {
+        console.error('[semantic] Failed to index text note', {
+          saveId: save.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
     if (processing.source === 'cache') {
       return {
         status: 'saved',
@@ -430,7 +449,7 @@ export async function saveInstagramContent(params: {
     let replyKind: SaveReplyKind | undefined = mergeReplyKind;
     if (!replyKind) {
       if (previewInput && !directMedia) {
-        replyKind = 'shared_carousel_preview';
+        replyKind = 'shared_post_preview';
       } else if (directMedia) {
         replyKind = 'direct_image';
       } else if (postUrl) {

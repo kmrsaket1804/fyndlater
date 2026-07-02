@@ -21,9 +21,10 @@ export const FAYE_REPLY = {
   reelQueued: "Saved ✨ I'm reading this reel and organizing it for you.",
   postQueued: "Saved ✨ I'm reading this post and organizing it for you.",
   sharedPostPreview:
-    'Saved ✨ I captured the visible post and organized it for you.',
+    'Saved ✨ I captured the visible post and organized it for you. Send the post link if you want the full version saved too.',
+  /** @deprecated Alias — ig_post shares cannot be typed as carousel vs single image. */
   sharedCarouselPreview:
-    'Saved the preview ✨ Send me the post link too if you want me to capture the full carousel.',
+    'Saved ✨ I captured the visible post and organized it for you. Send the post link if you want the full version saved too.',
   mergeSuccess:
     'Perfect ✨ I found the link and upgraded this save with the full post details.',
   mergeUncertain:
@@ -51,9 +52,8 @@ export function immediateReplyForSave(kind: SaveReplyKind) {
     case 'global_cached':
       return FAYE_REPLY.globalCached;
     case 'shared_post_preview':
-      return FAYE_REPLY.sharedPostPreview;
     case 'shared_carousel_preview':
-      return FAYE_REPLY.sharedCarouselPreview;
+      return FAYE_REPLY.sharedPostPreview;
     case 'merge_success':
       return FAYE_REPLY.mergeSuccess;
     case 'merge_uncertain':

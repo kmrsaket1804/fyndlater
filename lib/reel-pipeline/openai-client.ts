@@ -10,7 +10,7 @@ import type { ReelMetadata, VisualAnalysis } from './types';
 
 let openaiClient: OpenAI | undefined;
 
-function getOpenAI() {
+export function getOpenAI() {
   if (!openaiClient) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {

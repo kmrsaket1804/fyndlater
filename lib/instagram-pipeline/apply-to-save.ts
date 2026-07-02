@@ -16,6 +16,7 @@ import {
   type ProcessedSaveRecord,
 } from './router';
 import type { ProcessedPostRecord, SavePostMetadata } from './types';
+import { indexProcessedSave } from '@/lib/semantic/index-save';
 
 function titleFromSummary(summary: string, caption?: string | null) {
   const text = summary.trim() || caption?.trim() || '';
@@ -135,6 +136,22 @@ export async function applyPostResultToSave(
     canonicalKey,
     enrichmentStatus,
   });
+
+  try {
+    await indexProcessedSave({
+      saveId,
+      record,
+      savedItemId: options?.savedItemId,
+      instagramMessageId: options?.instagramMessageId,
+      canonicalKey,
+      tags,
+    });
+  } catch (error) {
+    console.error('[semantic] Failed to index post save', {
+      saveId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   console.info('[instagram-pipeline] Applied post result to save', {
     saveId,

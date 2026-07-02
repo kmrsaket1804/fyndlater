@@ -5,6 +5,7 @@ import {
   postUrlFromRecord,
 } from '@/lib/instagram-pipeline/router';
 import { extractShortcode } from '@/lib/instagram-pipeline/post-url';
+import { userFacingProcessingError } from './user-facing-errors';
 import { sendInstagramMessage } from './send-message';
 
 function truncate(text: string, max: number) {
@@ -70,7 +71,7 @@ export function formatPostReadyMessage(
   const kind = postKindFromRecord(record);
 
   const header = options?.partialPreview
-    ? 'Done ✨ I captured the visible post and organized it for you.'
+    ? 'Done ✨ Saved from what Instagram shared. Send the post link anytime if you want the full version too.'
     : readyHeader(record, options?.fromCache);
 
   const lines = [header, '', `"${title}"`];
@@ -99,9 +100,7 @@ export function formatPostFailedMessage(
         ? 'image post'
         : 'reel';
 
-  const detail = errorMessage?.trim()
-    ? truncate(errorMessage.trim(), 160)
-    : null;
+  const detail = userFacingProcessingError(errorMessage);
 
   const lines = [
     `Couldn't finish analyzing this ${label} ✨`,

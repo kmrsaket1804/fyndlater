@@ -6,6 +6,7 @@ import { saveTags, savedItems, saves } from '@/lib/db/schema';
 import { findDisplayUrl } from './apify';
 import { upsertCachedReelRecord } from './cache';
 import type { FinalRecord } from './types';
+import { indexProcessedSave } from '@/lib/semantic/index-save';
 
 function titleFromRecord(record: FinalRecord) {
   const summary = record.visualAnalysis.summary.trim();
@@ -83,6 +84,24 @@ export async function applyReelResultToSave(
   }
 
   await syncSavedItemFromRecord(record, options);
+
+  try {
+    await indexProcessedSave({
+      saveId,
+      record,
+      savedItemId: options?.savedItemId,
+      instagramMessageId: options?.instagramMessageId,
+      canonicalKey: record.metadata.shortcode
+        ? `instagram:reel:${record.metadata.shortcode}`
+        : null,
+      tags,
+    });
+  } catch (error) {
+    console.error('[semantic] Failed to index reel save', {
+      saveId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function syncSavedItemFromRecord(
