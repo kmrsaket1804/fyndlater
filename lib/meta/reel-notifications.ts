@@ -5,6 +5,7 @@ import {
   postUrlFromRecord,
 } from '@/lib/instagram-pipeline/router';
 import { extractShortcode } from '@/lib/instagram-pipeline/post-url';
+import { instagramPostPathFromUrl } from './instagram-dm-url';
 import { userFacingProcessingError } from './user-facing-errors';
 import { sendInstagramMessage } from './send-message';
 
@@ -81,9 +82,10 @@ export function formatPostReadyMessage(
   }
 
   if (shortcode) {
-    const path =
-      kind === 'reel' ? `instagram.com/reel/${shortcode}` : `instagram.com/p/${shortcode}`;
-    lines.push('', `Post: ${path}`);
+    const path = instagramPostPathFromUrl(postUrlFromRecord(record), kind);
+    if (path) {
+      lines.push('', `Post: ${path}`);
+    }
   }
 
   return truncate(lines.join('\n'), 950);

@@ -14,6 +14,7 @@
     "test:meta-post-resolution": "npx tsx scripts/test-meta-post-resolution.ts",
     "test:faye-save-flow": "npx tsx scripts/test-faye-save-flow.ts",
     "test:semantic-retrieval": "npx tsx scripts/test-semantic-retrieval.ts",
+    "test:instagram-dm-url": "npx tsx scripts/test-instagram-dm-url.ts",
     "clear-pending": "npx tsx scripts/clear-pending-processing.ts"
   },
   "dependencies": {
