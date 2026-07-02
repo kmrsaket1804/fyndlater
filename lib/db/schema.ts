@@ -109,6 +109,11 @@ export const saves = pgTable('saves', {
   sourceUrl: text('source_url'),
   imageUrl: text('image_url'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  canonicalKey: varchar('canonical_key', { length: 128 }),
+  enrichmentStatus: varchar('enrichment_status', { length: 32 })
+    .notNull()
+    .default('pending'),
+  processingVersion: integer('processing_version').notNull().default(1),
   status: varchar('status', { length: 20 }).notNull().default('processing'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -245,6 +250,8 @@ export const savedItems = pgTable('saved_items', {
   rawText: text('raw_text'),
   mediaStorageUrl: text('media_storage_url'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  canonicalKey: varchar('canonical_key', { length: 128 }),
+  enrichmentStatus: varchar('enrichment_status', { length: 32 }),
   embeddingStatus: varchar('embedding_status', { length: 20 })
     .notNull()
     .default('pending'),

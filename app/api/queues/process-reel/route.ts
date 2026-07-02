@@ -5,6 +5,7 @@ import {
   markSavePostFailed,
 } from '@/lib/instagram-pipeline/apply-to-save';
 import { getCachedPostRecord } from '@/lib/instagram-pipeline/cache';
+import { processDmPreviewJob } from '@/lib/instagram-pipeline/preview-graph';
 import { processInstagramPostJob } from '@/lib/instagram-pipeline/router';
 import { extractShortcode } from '@/lib/instagram-pipeline/post-url';
 import type { PostQueueMessage } from '@/lib/reel-pipeline/queue';
@@ -30,18 +31,33 @@ async function notifyIfInstagram(
     instagramMessageId: message.instagramMessageId,
     record,
     fromCache,
+    partialPreview: Boolean(message.dmPreview),
   });
 }
 
 export const POST = handleCallback(async (message: PostQueueMessage) => {
   const postUrl = postUrlFromMessage(message);
-  if (!postUrl) throw new Error('Queue message missing postUrl');
+  if (!postUrl && !message.dmPreview) {
+    throw new Error('Queue message missing postUrl or dmPreview');
+  }
   if (!message.jobId) throw new Error('Queue message missing jobId');
   if (!message.saveId) throw new Error('Queue message missing saveId');
 
   try {
+    if (message.dmPreview) {
+      const record = await processDmPreviewJob(message.dmPreview, {
+        jobId: message.jobId,
+      });
+      await applyPostResultToSave(message.saveId, record, {
+        savedItemId: message.savedItemId,
+        instagramMessageId: message.instagramMessageId,
+      });
+      await notifyIfInstagram(message, record);
+      return;
+    }
+
     const shortcode =
-      message.dedupeKey ?? extractShortcode(postUrl) ?? undefined;
+      message.dedupeKey ?? extractShortcode(postUrl!) ?? undefined;
 
     if (shortcode) {
       const cached = await getCachedPostRecord(shortcode);
@@ -60,7 +76,7 @@ export const POST = handleCallback(async (message: PostQueueMessage) => {
       }
     }
 
-    const record = await processInstagramPostJob(postUrl, {
+    const record = await processInstagramPostJob(postUrl!, {
       jobId: message.jobId,
     });
     await applyPostResultToSave(message.saveId, record, {
@@ -78,7 +94,7 @@ export const POST = handleCallback(async (message: PostQueueMessage) => {
         senderIgsid: message.instagramSenderId,
         instagramMessageId: message.instagramMessageId,
         errorMessage,
-        postUrl,
+        postUrl: postUrl ?? undefined,
       });
     }
 

@@ -45,6 +45,10 @@ export async function applyReelResultToSave(
       title,
       description: summary || record.metadata.caption || null,
       imageUrl,
+      canonicalKey: record.metadata.shortcode
+        ? `instagram:reel:${record.metadata.shortcode}`
+        : null,
+      enrichmentStatus: 'full',
       status: 'ready',
       updatedAt: new Date(),
     })

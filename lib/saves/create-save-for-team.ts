@@ -3,8 +3,14 @@ import { saves } from '@/lib/db/schema';
 import { getUsageSummary } from '@/lib/db/dashboard-queries';
 import { teams } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { schedulePostProcessing } from '@/lib/instagram-pipeline/schedule';
+import {
+  schedulePostProcessing,
+  scheduleDmPreviewProcessing,
+} from '@/lib/instagram-pipeline/schedule';
 import { isInstagramPostUrl } from '@/lib/instagram-pipeline/post-url';
+import type { DmSharePreview } from '@/lib/meta/shared-post-types';
+import type { EnrichmentStatus } from '@/lib/meta/canonical-key';
+import { PROCESSING_VERSION } from '@/lib/meta/canonical-key';
 import type { CreateSaveInput } from './create-save';
 
 function inferTypeFromUrl(url: string): 'reel' | 'post' | 'link' {
@@ -73,6 +79,10 @@ export async function createSaveForTeam(params: {
   userId: number;
   input: CreateSaveInput;
   planName?: string | null;
+  canonicalKey?: string | null;
+  enrichmentStatus?: EnrichmentStatus;
+  metadata?: Record<string, unknown>;
+  status?: 'processing' | 'ready' | 'failed';
 }) {
   const [team] = await db
     .select()
@@ -104,7 +114,11 @@ export async function createSaveForTeam(params: {
       source: fields.source,
       sourceUrl: fields.sourceUrl,
       imageUrl: fields.imageUrl,
-      status: 'processing',
+      canonicalKey: params.canonicalKey ?? null,
+      enrichmentStatus: params.enrichmentStatus ?? 'pending',
+      processingVersion: PROCESSING_VERSION,
+      metadata: params.metadata ?? null,
+      status: params.status ?? 'processing',
     })
     .returning();
 
@@ -114,23 +128,37 @@ export async function createSaveForTeam(params: {
 export async function scheduleSaveProcessing(params: {
   saveId: number;
   teamId: number;
-  userId: number;
+  userId?: number;
   sourceUrl: string | null;
+  dmPreview?: DmSharePreview;
   savedItemId?: number;
   instagramMessageId?: string;
   instagramSenderId?: string;
+  upgradeExisting?: boolean;
 }) {
-  if (!params.sourceUrl || !isInstagramPostUrl(params.sourceUrl)) {
-    return { source: 'skipped' as const };
+  if (params.sourceUrl && isInstagramPostUrl(params.sourceUrl)) {
+    return schedulePostProcessing({
+      postUrl: params.sourceUrl,
+      saveId: params.saveId,
+      teamId: params.teamId,
+      userId: params.userId,
+      savedItemId: params.savedItemId,
+      instagramMessageId: params.instagramMessageId,
+      instagramSenderId: params.instagramSenderId,
+    });
   }
 
-  return schedulePostProcessing({
-    postUrl: params.sourceUrl,
-    saveId: params.saveId,
-    teamId: params.teamId,
-    userId: params.userId,
-    savedItemId: params.savedItemId,
-    instagramMessageId: params.instagramMessageId,
-    instagramSenderId: params.instagramSenderId,
-  });
+  if (params.dmPreview) {
+    return scheduleDmPreviewProcessing({
+      preview: params.dmPreview,
+      saveId: params.saveId,
+      teamId: params.teamId,
+      userId: params.userId,
+      savedItemId: params.savedItemId,
+      instagramMessageId: params.instagramMessageId,
+      instagramSenderId: params.instagramSenderId,
+    });
+  }
+
+  return { source: 'skipped' as const };
 }

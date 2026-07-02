@@ -7,6 +7,10 @@ import { findDisplayUrl } from '../reel-pipeline/apify';
 import type { FinalRecord } from '../reel-pipeline/types';
 import { upsertCachedPostRecord } from './cache';
 import {
+  buildCanonicalKeyFromUrl,
+  carouselCanonicalKey,
+} from '../meta/canonical-key';
+import {
   isProcessedPostRecord,
   postUrlFromRecord,
   type ProcessedSaveRecord,
@@ -77,6 +81,7 @@ export async function applyPostResultToSave(
   const title = titleFromSummary(summary, record.metadata.caption);
   const imageUrl = imageUrlFromRecord(record);
   const metadata = buildSaveMetadata(record);
+  const tags = tagsFromAnalysis(record.visualAnalysis.tags);
   const saveType =
     record.postKind === 'carousel' || record.postKind === 'image'
       ? 'post'
@@ -94,8 +99,6 @@ export async function applyPostResultToSave(
       updatedAt: new Date(),
     })
     .where(eq(saves.id, saveId));
-
-  const tags = tagsFromAnalysis(record.visualAnalysis.tags);
   if (tags.length) {
     await db
       .insert(saveTags)
@@ -108,7 +111,30 @@ export async function applyPostResultToSave(
     await upsertCachedPostRecord(shortcode, record.postUrl, record);
   }
 
-  await syncSavedItem(record, options, { title, summary, tags, metadata });
+  const canonicalKey =
+    record.postKind === 'carousel' && shortcode
+      ? carouselCanonicalKey(shortcode)
+      : buildCanonicalKeyFromUrl(postUrlFromRecord(record));
+
+  const isDmPreview = Boolean(record.metadata.raw?.dmSharePreview);
+  const enrichmentStatus = isDmPreview ? 'asset_only' : 'full';
+
+  await db
+    .update(saves)
+    .set({
+      canonicalKey: canonicalKey ?? undefined,
+      enrichmentStatus,
+    })
+    .where(eq(saves.id, saveId));
+
+  await syncSavedItem(record, options, {
+    title,
+    summary,
+    tags,
+    metadata,
+    canonicalKey,
+    enrichmentStatus,
+  });
 
   console.info('[instagram-pipeline] Applied post result to save', {
     saveId,
@@ -142,6 +168,8 @@ async function syncSavedItem(
     summary: string;
     tags: string[];
     metadata: SavePostMetadata;
+    canonicalKey?: string | null;
+    enrichmentStatus?: string;
   }
 ) {
   const itemPatch = {
@@ -151,6 +179,8 @@ async function syncSavedItem(
     sourceUrl: postUrlFromRecord(record),
     contentType: contentTypeFromRecord(record),
     metadata: patch.metadata,
+    canonicalKey: patch.canonicalKey ?? null,
+    enrichmentStatus: patch.enrichmentStatus ?? 'full',
     embeddingStatus: 'ready' as const,
   };
 

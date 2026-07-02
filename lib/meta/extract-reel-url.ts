@@ -15,7 +15,7 @@ function postUrlFromShortcode(
   return `https://www.instagram.com/${kind}/${shortcode}/`;
 }
 
-function normalizeExtractedUrl(url: string) {
+export function normalizeExtractedUrl(url: string) {
   return url.replace(/\?.*$/, '').replace(/\/$/, '') + '/';
 }
 
@@ -34,8 +34,60 @@ function extractFromText(text: string | null): string | null {
   return normalizeExtractedUrl(match[0]);
 }
 
-function isInstagramPermalink(url: string) {
+export function isInstagramPermalink(url: string) {
   return INSTAGRAM_SHORTCODE_REGEX.test(url);
+}
+
+export function extractDirectMediaFromEvent(event: NormalizedInstagramEvent) {
+  for (const attachment of event.attachments) {
+    const type = attachment.type.toLowerCase();
+    if (!['image', 'video'].includes(type)) {
+      continue;
+    }
+
+    const mediaUrl =
+      readString(attachment.payload?.url) ?? readString(attachment.url);
+    if (!mediaUrl || isInstagramPermalink(mediaUrl)) {
+      continue;
+    }
+
+    return {
+      previewUrl: mediaUrl,
+      attachmentType: type,
+    };
+  }
+
+  return null;
+}
+
+export function extractDmSharePreviewFromEvent(
+  event: NormalizedInstagramEvent
+) {
+  for (const attachment of event.attachments) {
+    const type = attachment.type.toLowerCase();
+    if (!['ig_post', 'post', 'share'].includes(type)) {
+      continue;
+    }
+
+    const payload = attachment.payload;
+    const previewUrl =
+      readString(payload?.url) ?? readString(attachment.url);
+    if (!previewUrl || isInstagramPermalink(previewUrl)) {
+      continue;
+    }
+
+    return {
+      previewUrl,
+      caption: readString(payload?.title),
+      mediaId:
+        readString(payload?.ig_post_media_id) ??
+        readString(payload?.id) ??
+        mediaIdFromUrl(previewUrl),
+      attachmentType: type,
+    };
+  }
+
+  return null;
 }
 
 function mediaIdFromUrl(url: string): string | undefined {

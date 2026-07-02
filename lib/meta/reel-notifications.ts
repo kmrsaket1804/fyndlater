@@ -45,31 +45,35 @@ function readyHeader(record: ProcessedSaveRecord, fromCache?: boolean) {
       : undefined;
     const countLabel = slideCount ? `${slideCount}-slide ` : '';
     return fromCache
-      ? `Done ✨ I already had this ${countLabel}carousel — added to your library.`
+      ? "Done ✨ I already knew this one, so I've added it to your memory."
       : `Done ✨ Your ${countLabel}carousel is saved and analyzed.`;
   }
 
   if (kind === 'image') {
     return fromCache
-      ? 'Done ✨ I already had this image — added to your library.'
+      ? "Done ✨ I already knew this one, so I've added it to your memory."
       : 'Done ✨ Your image post is saved and analyzed.';
   }
 
   return fromCache
-    ? 'Done ✨ I already had this reel — added to your library.'
+    ? "Done ✨ I already knew this one, so I've added it to your memory."
     : 'Done ✨ Your reel is saved and analyzed.';
 }
 
 export function formatPostReadyMessage(
   record: ProcessedSaveRecord,
-  options?: { fromCache?: boolean }
+  options?: { fromCache?: boolean; partialPreview?: boolean }
 ) {
   const title = titleFromRecord(record);
   const tags = tagsFromRecord(record);
   const shortcode = extractShortcode(postUrlFromRecord(record));
   const kind = postKindFromRecord(record);
 
-  const lines = [readyHeader(record, options?.fromCache), '', `"${title}"`];
+  const header = options?.partialPreview
+    ? 'Done ✨ I captured the visible post and organized it for you.'
+    : readyHeader(record, options?.fromCache);
+
+  const lines = [header, '', `"${title}"`];
 
   if (tags.length) {
     lines.push('', `Tags: ${tags.join(', ')}`);
@@ -126,9 +130,11 @@ export async function notifyPostReady(params: {
   instagramMessageId?: string;
   record: ProcessedSaveRecord;
   fromCache?: boolean;
+  partialPreview?: boolean;
 }) {
   const text = formatPostReadyMessage(params.record, {
     fromCache: params.fromCache,
+    partialPreview: params.partialPreview,
   });
 
   return sendInstagramMessage(params.senderIgsid, text, {

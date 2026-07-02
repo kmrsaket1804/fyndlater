@@ -2,7 +2,8 @@ import 'server-only';
 
 import { applyPostResultToSave } from './apply-to-save';
 import { getCachedPostRecord } from './cache';
-import { enqueuePostProcessing } from './enqueue';
+import { enqueueDmPreviewProcessing, enqueuePostProcessing } from './enqueue';
+import type { DmSharePreview } from '../meta/shared-post-types';
 import { extractShortcode, normalizeInstagramPostUrl } from './post-url';
 import { isProcessedPostRecord, type ProcessedSaveRecord } from './router';
 import { isReelPipelineConfigured } from '../reel-pipeline/config';
@@ -61,6 +62,36 @@ export async function schedulePostProcessing(params: {
   return {
     source: 'queued',
     shortcode,
+    jobId: queued.jobId,
+    messageId: queued.messageId ?? queued.jobId,
+  };
+}
+
+/** Enqueue vision analysis for an Instagram DM share preview (CDN image only). */
+export async function scheduleDmPreviewProcessing(params: {
+  preview: DmSharePreview;
+  saveId: number;
+  teamId: number;
+  userId?: number;
+  savedItemId?: number;
+  instagramMessageId?: string;
+  instagramSenderId?: string;
+}): Promise<PostScheduleResult> {
+  if (!isReelPipelineConfigured()) {
+    console.warn(
+      '[instagram-pipeline] Skipping preview schedule — APIFY_TOKEN or OPENAI_API_KEY not set'
+    );
+    return { source: 'skipped' };
+  }
+
+  const queued = await enqueueDmPreviewProcessing(params);
+  if (!queued) {
+    return { source: 'skipped' };
+  }
+
+  return {
+    source: 'queued',
+    shortcode: params.preview.mediaId,
     jobId: queued.jobId,
     messageId: queued.messageId ?? queued.jobId,
   };

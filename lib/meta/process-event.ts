@@ -16,6 +16,7 @@ import {
   extractShortcode,
   inferUrlPipelineKind,
 } from '@/lib/instagram-pipeline/post-url';
+import { immediateReplyForSave } from './faye-replies';
 import { routeInstagramIntent } from './router';
 import { saveInstagramContent } from './save-from-instagram';
 import { sendInstagramMessage } from './send-message';
@@ -40,6 +41,10 @@ function messageContextLabel(event: NormalizedInstagramEvent) {
     return 'Re: your shared post';
   }
 
+  if (event.message_type === 'image') {
+    return 'Re: your image';
+  }
+
   return 'Re: your message';
 }
 
@@ -49,22 +54,15 @@ function replyForIntent(
   saveResult?: Awaited<ReturnType<typeof saveInstagramContent>> | null
 ) {
   if (saveResult?.status === 'quota_exceeded') {
-    return "You've reached your monthly save limit ✨ Upgrade to Pro on fyndlater.com for more.";
+    return immediateReplyForSave('quota_exceeded');
   }
 
-  if (saveResult?.status === 'error' && saveResult.message.includes('shared post URL')) {
-    return "I couldn't read that shared post link ✨ Try pasting the instagram.com/p/… URL directly.";
+  if (saveResult?.status === 'duplicate') {
+    return immediateReplyForSave(saveResult.replyKind);
   }
 
-  if (saveResult?.status === 'saved' && saveResult.postUrl) {
-    const kind = inferUrlPipelineKind(saveResult.postUrl);
-    if (saveResult.processing === 'queued') {
-      if (kind === 'feed_post') {
-        return "Saved ✨ I'm analyzing this post for you — I'll reply here when it's ready.";
-      }
-      return "Saved ✨ I'm analyzing this reel for you — I'll reply here when it's ready.";
-    }
-    return META_REPLY.organizing;
+  if (saveResult?.status === 'saved' && saveResult.replyKind) {
+    return immediateReplyForSave(saveResult.replyKind);
   }
 
   switch (intent) {
