@@ -5,7 +5,11 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   outputFileTracingIncludes: {
-    '/api/queues/process-reel': ['./lib/reel-pipeline/bin/ffmpeg'],
+    '/api/queues/process-reel': [
+      './lib/reel-pipeline/bin/ffmpeg-linux-x64',
+      './lib/reel-pipeline/bin/ffmpeg-linux-arm64',
+      './lib/reel-pipeline/bin/ffmpeg',
+    ],
   },
   images: {
     remotePatterns: [

@@ -2,7 +2,7 @@
 
 # dependencies
 /node_modules
-/lib/reel-pipeline/bin/ffmpeg
+/lib/reel-pipeline/bin/ffmpeg*
 /.pnp
 .pnp.js
 .yarn/install-state.gz

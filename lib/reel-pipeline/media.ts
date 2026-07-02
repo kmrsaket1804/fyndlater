@@ -9,13 +9,35 @@ import {
 import { readdir } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { ensureDir, execFileAsync } from './utils';
 
-const BUNDLED_FFMPEG_REL = 'lib/reel-pipeline/bin/ffmpeg';
+const BUNDLED_FFMPEG_DIR = 'lib/reel-pipeline/bin';
+const BUNDLED_FFMPEG_REL = `${BUNDLED_FFMPEG_DIR}/ffmpeg`;
 const RUNTIME_FFMPEG = '/tmp/fyndlater-ffmpeg';
 
 let cachedFfmpegPath: string | null = null;
+
+function normalizeArch(arch: string) {
+  if (arch === 'amd64') return 'x64';
+  return arch;
+}
+
+function bundledCandidates(): string[] {
+  const platform = process.platform;
+  const arch = normalizeArch(process.arch);
+  const root = process.cwd();
+
+  return [
+    path.join(root, BUNDLED_FFMPEG_DIR, `ffmpeg-${platform}-${arch}`),
+    path.join(root, BUNDLED_FFMPEG_REL),
+  ];
+}
+
+function validateExecutable(binaryPath: string) {
+  accessSync(binaryPath, constants.X_OK);
+}
 
 function getFfmpegPath(): string {
   if (cachedFfmpegPath) {
@@ -24,24 +46,39 @@ function getFfmpegPath(): string {
 
   if (process.env.FFMPEG_PATH) {
     accessSync(process.env.FFMPEG_PATH, constants.F_OK);
+    validateExecutable(process.env.FFMPEG_PATH);
     cachedFfmpegPath = process.env.FFMPEG_PATH;
     return cachedFfmpegPath;
   }
 
-  const bundled = path.join(process.cwd(), BUNDLED_FFMPEG_REL);
-  if (!existsSync(bundled)) {
-    throw new Error(
-      `Bundled ffmpeg missing at ${bundled}. Run scripts/ensure-ffmpeg.mjs before build.`
-    );
+  let lastError: Error | undefined;
+
+  for (const bundled of bundledCandidates()) {
+    if (!existsSync(bundled)) {
+      continue;
+    }
+
+    try {
+      copyFileSync(bundled, RUNTIME_FFMPEG);
+      chmodSync(RUNTIME_FFMPEG, 0o755);
+      validateExecutable(RUNTIME_FFMPEG);
+      console.info('[reel-pipeline] Using ffmpeg at', RUNTIME_FFMPEG, {
+        source: bundled,
+        runtime: `${os.platform()}/${os.arch()}`,
+      });
+      cachedFfmpegPath = RUNTIME_FFMPEG;
+      return cachedFfmpegPath;
+    } catch (error) {
+      lastError =
+        error instanceof Error ? error : new Error(String(error));
+    }
   }
 
-  copyFileSync(bundled, RUNTIME_FFMPEG);
-  chmodSync(RUNTIME_FFMPEG, 0o755);
-  accessSync(RUNTIME_FFMPEG, constants.X_OK);
-
-  console.info('[reel-pipeline] Using ffmpeg at', RUNTIME_FFMPEG);
-  cachedFfmpegPath = RUNTIME_FFMPEG;
-  return cachedFfmpegPath;
+  throw new Error(
+    `No compatible ffmpeg binary found for ${os.platform()}/${os.arch()}. ` +
+      `Checked: ${bundledCandidates().join(', ')}. ` +
+      (lastError ? lastError.message : '')
+  );
 }
 
 export async function downloadFile(url: string, outputPath: string) {
