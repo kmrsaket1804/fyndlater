@@ -5,7 +5,9 @@ import { db } from '@/lib/db/drizzle';
 import { saveTags, saves } from '@/lib/db/schema';
 import { isSemanticRetrievalConfigured } from './config';
 import { embedQuery } from './embeddings';
-import { instagramPostPathFromUrl } from '@/lib/meta/instagram-dm-url';
+import {
+  instagramPostLinkFromUrl,
+} from '@/lib/meta/instagram-dm-url';
 import { searchUserSaveVectors } from './qdrant';
 
 export type RetrievedSave = {
@@ -161,11 +163,11 @@ export function formatRetrievalReply(
       result.type;
     lines.push(`${index + 1}. "${truncate(result.title, 90)}"`);
     lines.push(`   ${truncate(snippet, 120)}`);
-    const postPath = result.sourceUrl
-      ? instagramPostPathFromUrl(result.sourceUrl, result.type)
+    const link = result.sourceUrl
+      ? instagramPostLinkFromUrl(result.sourceUrl, result.type)
       : null;
-    if (postPath) {
-      lines.push(`   ${truncate(postPath, 80)}`);
+    if (link) {
+      lines.push(`   ${truncate(link, 80)}`);
     }
     lines.push('');
   }

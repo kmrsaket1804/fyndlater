@@ -5,7 +5,7 @@ import {
   postUrlFromRecord,
 } from '@/lib/instagram-pipeline/router';
 import { extractShortcode } from '@/lib/instagram-pipeline/post-url';
-import { instagramPostPathFromUrl } from './instagram-dm-url';
+import { instagramPostLinkFromUrl } from './instagram-dm-url';
 import { userFacingProcessingError } from './user-facing-errors';
 import { sendInstagramMessage } from './send-message';
 
@@ -82,7 +82,7 @@ export function formatPostReadyMessage(
   }
 
   if (shortcode) {
-    const path = instagramPostPathFromUrl(postUrlFromRecord(record), kind);
+    const path = instagramPostLinkFromUrl(postUrlFromRecord(record), kind);
     if (path) {
       lines.push('', `Post: ${path}`);
     }
