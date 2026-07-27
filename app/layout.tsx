@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { getUser, getTeamForUser } from '@/lib/db/queries';
 import { SWRConfig } from 'swr';
+import { GoogleAnalytics } from '@/components/google-analytics';
 
 export const metadata: Metadata = {
   title: 'FyndLater — Your AI memory for everything you save',
@@ -49,6 +50,7 @@ export default function RootLayout({
       className={`bg-white dark:bg-gray-950 text-black dark:text-white ${inter.className}`}
     >
       <body className="min-h-[100dvh] bg-white">
+        <GoogleAnalytics />
         <SWRConfig
           value={{
             fallback: {

@@ -9,5 +9,7 @@ declare global {
         options: { action: string }
       ) => Promise<string>;
     };
+    gtag?: (...args: unknown[]) => void;
+    dataLayer?: unknown[];
   }
 }
