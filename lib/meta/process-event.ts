@@ -78,7 +78,7 @@ function replyForIntent(
     case 'SAVE_CONTENT':
     case 'UNKNOWN':
     default:
-      return isLinked ? META_REPLY.organizing : META_REPLY.received;
+      return isLinked ? META_REPLY.organizing : META_REPLY.unlinked;
   }
 }
 

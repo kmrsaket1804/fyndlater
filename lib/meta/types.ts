@@ -36,7 +36,7 @@ export const META_REPLY = {
   received: 'Saved ✨ Faye received this.',
   organizing: "Saved ✨ I'm organizing this for you.",
   unlinked:
-    "Hi, I'm Faye ✨ To connect, open fyndlater.com/dashboard/connect and send me your connect code.",
+    "Hi, I'm Faye ✨ I'd love to save this for you, but your Instagram isn't connected yet. Open fyndlater.com/dashboard/connect, grab your code, and send it to me here — then resend what you'd like to save!",
   retrieve: 'Found it ✨ Here are the closest saves.',
   help: 'Send me reels, links, screenshots, or notes — I\'ll save and organize them. Ask naturally to find them later.',
 } as const;
