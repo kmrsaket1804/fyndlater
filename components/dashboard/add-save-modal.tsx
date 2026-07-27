@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { fayeInstagramUrl } from '@/lib/config';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
 
 type Tab = 'link' | 'note' | 'upload' | 'instagram';
 
@@ -101,6 +102,7 @@ export function AddSaveModal({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save');
 
+      trackEvent('save_created', { source: 'link' });
       await refreshDashboard();
       onOpenChange(false);
     } catch (err) {
@@ -129,6 +131,7 @@ export function AddSaveModal({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save');
 
+      trackEvent('save_created', { source: 'manual' });
       await refreshDashboard();
       onOpenChange(false);
     } catch (err) {
@@ -159,6 +162,7 @@ export function AddSaveModal({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save');
 
+      trackEvent('save_created', { source: 'upload' });
       await refreshDashboard();
       onOpenChange(false);
     } catch (err) {

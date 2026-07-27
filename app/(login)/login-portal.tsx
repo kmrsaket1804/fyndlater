@@ -11,6 +11,7 @@ import { Loader2, Shield, Sparkles } from 'lucide-react';
 import { authenticate } from './auth-actions';
 import { ActionState } from '@/lib/auth/middleware';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -42,10 +43,11 @@ export function LoginPortal({
 
   useEffect(() => {
     if (state?.redirectTo) {
+      trackEvent(mode === 'signup' ? 'sign_up' : 'login', { method: 'email' });
       router.replace(state.redirectTo);
       router.refresh();
     }
-  }, [state?.redirectTo, router]);
+  }, [state?.redirectTo, router, mode]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -8,6 +8,7 @@ import { mutate } from 'swr';
 import type { AskPageData, ChatMessage, SaveItem } from '@/lib/dashboard/types';
 import { ChatMessageBubble } from './chat-message';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -76,6 +77,10 @@ export function AskFayeChat() {
         ...result.messages,
       ]);
 
+      trackEvent('ask_faye_query', {
+        has_results: result.messages.some((m: ChatMessage) => m.save),
+      });
+
       mutate('/api/ask');
       mutate('/api/dashboard/home');
       mutate('/api/saved-searches');
@@ -95,6 +100,7 @@ export function AskFayeChat() {
   }
 
   async function handleShowSimilar(save: SaveItem) {
+    trackEvent('show_similar');
     const query = `Show similar to ${save.title}`;
     await submitQuery(query);
   }

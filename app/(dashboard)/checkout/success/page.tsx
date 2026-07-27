@@ -6,6 +6,7 @@ import {
   handleCashfreePaymentSuccess,
 } from '@/lib/payments/cashfree';
 import { getPlan, type PlanId } from '@/lib/payments/plans';
+import { PurchaseEvent } from './purchase-event';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,7 @@ export default async function CheckoutSuccessPage({
       <div className="max-w-md mx-auto text-center">
         {success ? (
           <>
+            <PurchaseEvent plan={planName} value={499} currency="INR" />
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>

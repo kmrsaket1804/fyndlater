@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
 import {
   Check,
@@ -14,6 +14,7 @@ import { SettingsPageShell } from '@/components/dashboard/settings-page-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fayeInstagramUrl } from '@/lib/config';
+import { trackEvent } from '@/lib/analytics';
 
 type ConnectStatus =
   | { linked: true; linkedAt: string }
@@ -35,13 +36,22 @@ export default function ConnectInstagramPage() {
   );
   const [copied, setCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const linkedTracked = useRef(false);
 
   const copy = data;
+
+  useEffect(() => {
+    if (copy?.linked && !linkedTracked.current) {
+      linkedTracked.current = true;
+      trackEvent('instagram_connected');
+    }
+  }, [copy?.linked]);
 
   async function handleCopy() {
     if (!copy || copy.linked) return;
     await navigator.clipboard.writeText(copy.code);
     setCopied(true);
+    trackEvent('instagram_connect_start');
     setTimeout(() => setCopied(false), 2000);
   }
 
